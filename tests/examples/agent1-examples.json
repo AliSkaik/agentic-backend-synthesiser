@@ -1,0 +1,66 @@
+[
+  {
+    "id": "users-basic",
+    "description": "Create a table for users with id, email and created_at.",
+    "expect": {
+      "tables": ["users"],
+      "columns": { "users": ["id", "email", "created_at"] },
+      "relationships": []
+    }
+  },
+  {
+    "id": "products-with-price",
+    "description": "Create a products table that stores each product's name and its price.",
+    "expect": {
+      "tables": ["products"],
+      "columns": { "products": ["id", "name", "price"] },
+      "types": { "products": { "price": "numeric" } },
+      "relationships": []
+    }
+  },
+  {
+    "id": "posts-comments",
+    "description": "Create tables for blog posts and their comments, where every comment belongs to exactly one post.",
+    "expect": {
+      "tables": ["posts", "comments"],
+      "columns": {
+        "posts": ["id"],
+        "comments": ["id", "post_id"]
+      },
+      "relationships": [
+        { "from": "comments", "to": "posts", "via": "post_id" }
+      ]
+    }
+  },
+  {
+    "id": "orders-customer",
+    "description": "Store customers along with their name and email, and orders where each order is placed by exactly one customer.",
+    "expect": {
+      "tables": ["customers", "orders"],
+      "columns": {
+        "customers": ["id", "name", "email"],
+        "orders": ["id", "customer_id"]
+      },
+      "relationships": [
+        { "from": "orders", "to": "customers", "via": "customer_id" }
+      ],
+      "forbidden": { "orders": ["name", "email"] }
+    }
+  },
+  {
+    "id": "library-loans-messy",
+    "description": "so we run a small community library and members can borrow lots of books over time and we really need to know which member borrowed which book and roughly when they took it out because a single member takes out many books and any given book gets borrowed again and again by different people.",
+    "expect": {
+      "tables": ["books", "members", "loans"],
+      "columns": {
+        "books": ["id"],
+        "members": ["id"],
+        "loans": ["id", "book_id", "member_id", "loaned_at"]
+      },
+      "relationships": [
+        { "from": "loans", "to": "books", "via": "book_id" },
+        { "from": "loans", "to": "members", "via": "member_id" }
+      ]
+    }
+  }
+]
