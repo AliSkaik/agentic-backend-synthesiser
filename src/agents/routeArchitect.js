@@ -37,14 +37,11 @@ Two requirements you must apply to every table, without exception:
 
 1. PUT handlers are always written with a fixed SQL string. Name every
    updatable column in the SET list with a numbered parameter, put the :id
-   last, and never build a PUT's SET list with .map or .join. When the table
-   declares an updated_at column, append updated_at = CURRENT_TIMESTAMP to the
-   SET list as SQL text. CURRENT_TIMESTAMP is SQL, never a JavaScript value,
-   so it must never appear in the parameter array:
+   last, and never build a PUT's SET list with .map or .join:
 
    const { title, content, author_id } = req.body;
    const result = await pool.query(
-     "UPDATE posts SET title = $1, content = $2, author_id = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4 RETURNING *",
+     "UPDATE posts SET title = $1, content = $2, author_id = $3 WHERE id = $4 RETURNING *",
      [title, content, author_id, id]
    );
 
