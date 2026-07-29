@@ -57,22 +57,39 @@ Determinism is proven by byte-identical _output_, recorded under limitation 3.)
 routes from DDL, code-only), deterministic decoding, defensive fence-stripping,
 wired into `src/index.js` on Agent 1's output. Iterated the prompt across four
 versions against a fixed blog DDL fixture (users/posts/tags + `post_tags`
-junction) so only the prompt varied. All four produce valid, parseable ES
-modules. Working baseline: **v4**, with the correctness caveat in limitation 2.
+junction) so only the prompt varied, then a fifth against two fixtures.
+Baseline for the next iteration: **v5**, committed with a known, documented
+defect it does not parse on one of the two fixtures. See the v5 note below
+and limitations 2 and 3.
 
-| criterion              | v1   | v2   | v3      | v4   |
-| ---------------------- | ---- | ---- | ------- | ---- |
-| valid / parses         | ✅   | ✅   | ✅      | ✅   |
-| 404 via `rowCount`     | ❌   | ✅   | ✅      | ✅   |
-| junction nested        | ✅\* | ✅   | ✅      | ✅   |
-| DEFAULT-col INSERT     | ❌   | ❌   | ✅      | ✅   |
-| `updated_at` on UPDATE | ❌   | ❌   | ⚠ broke | ❌   |
-| runtime-correct        | ✅   | ✅   | ❌      | ✅†  |
-| latency (s)            | 181  | 205  | 244     | 241  |
-| output (chars)         | 5945 | 6423 | 7581    | 7195 |
+| criterion              | v1   | v2   | v3      | v4   | v5          |
+| ---------------------- | ---- | ---- | ------- | ---- | ----------- |
+| valid / parses         | ✅   | ✅   | ✅      | ✅   | ⚠ blog only |
+| 404 via `rowCount`     | ❌   | ✅   | ✅      | ✅   | ✅          |
+| junction nested        | ✅\* | ✅   | ✅      | ✅   | ✅          |
+| DEFAULT-col INSERT     | ❌   | ❌   | ✅      | ✅   | ✅          |
+| `updated_at` on UPDATE | ❌   | ❌   | ⚠ broke | ❌   | ❌‡         |
+| no invented columns    | ✅   | ✅   | ✅      | ✅§  | ✅          |
+| runtime-correct        | ✅   | ✅   | ❌      | ✅†  | ❌          |
+| latency (s)            | 181  | 205  | 244     | 241  | 235 / 179   |
+| output (chars)         | 5945 | 6423 | 7581    | 7195 | 7236 / 5858 |
 
 \* v1 nested the junction table unprompted, before the rule existed.
-† on the blog fixture only see limitation 2.
+† on the blog fixture only see limitation 3.
+‡ absent by design in v5, not by failure: the instruction was deliberately
+removed and the timestamp deferred to an Agent 1 trigger (limitation 4). In
+v1v4 the same ❌ means the model dropped an instruction that was present.
+§ v4 is clean on the blog fixture; the `updated_at` invention appeared only on
+its separate orders run (limitation 4). Checked by extracting every column name
+occupying a SQL column position an INSERT column list, an UPDATE SET clause,
+or an allowlist and testing membership against the DDL. Request-body field
+names are deliberately excluded, since they need not match column names.
+
+v1v4 figures are the blog fixture. v5 is given as **blog / orders**, the only
+version run against both in one sitting; v4's separate orders run (200 s,
+6349 chars, 13 routes) is described under the cross-schema test below. All
+parse results in this table were re-verified with a working gate after the
+defect in limitation 2 was found.
 
 **Wrapper verification.** Confirmed `generate()` threads both `system` and
 `options` into the Ollama request body rather than silently dropping them: a
@@ -88,6 +105,32 @@ all nine example-specific tokens (`users`, `posts`, `tags`, `post_tags`,
 in the generated module, and the router correctly used `customer_id` and
 `order_id` as primary keys rather than the examples' `id`.
 
+**v5 the `updated_at` removal (first half of a two-part change).** Deleted the
+`updated_at` instruction from Agent 2's prompt, keeping the static-PUT rule in
+the same block, since that rule is what prevents v3's parameter-misalignment
+bug. Re-ran on both fixtures. The fix worked: `updated_at` occurs zero times in
+both outputs, no referenced column is absent from its DDL, and the orders PUT
+handlers are now correct fixed SQL. Blog 235 s / 7236 chars, orders 179 s /
+5858 chars. The second half Agent 1 emitting a Postgres trigger to own the
+timestamp is a separate change to a different agent and its own sitting.
+
+v5 ships with two defects, both in nested-resource handlers:
+
+- `v5-orders` **does not parse**: the nested POST emits
+  `["$" + (i + 1) for (i in cols)]`, a legacy array comprehension removed from
+  JavaScript.
+- `v5-blog`'s nested POST reads `postId` from `req.body` when the route
+  declares it as `req.params`, so the insert always binds NULL and violates the
+  foreign key. This file parses cleanly.
+
+Both land on the one route type the prompt gives **no worked example** for.
+Every handler that has an example is clean on both fixtures. The reusable
+finding: this model pattern-matches to concrete examples far more reliably than
+it follows prose rules, which is a stronger lever than rule-wording but does
+not generalise to unexemplified cases. Deliberately not fixed by adding another
+example yet doing so would be tuning the prompt until two specific fixtures
+pass, which limitation 3 shows is not evidence of correctness.
+
 ### Technical limitations
 
 1. **Constraint saturation** the model cannot satisfy every constraint at once;
@@ -101,31 +144,89 @@ in the generated module, and the router correctly used `customer_id` and
      to hold a fact about the schema while generating unrelated code. v3 added
      `updated_at` and broke runtime correctness; v4 restored runtime
      correctness and lost `updated_at` again. Four versions, never both.
-   - _Mitigation:_ accepted v4, did not over-fit the prompt further.
-   - _Residual risk:_ `updated_at` is not guaranteed, so prompt tuning alone is
-     insufficient. Motivates deterministic verification in Agent 3.
+   - _Mitigation:_ stopped competing for the constraint. v5 removes the
+     `updated_at` instruction from Agent 2 entirely and reassigns the
+     requirement to Agent 1 as a trigger (limitation 4), rather than continuing
+     to tune wording. Splitting a constraint across agents is the only move
+     that reduced total constraint pressure; every attempt to satisfy both in
+     one prompt cost something else.
+   - _Residual risk:_ the saturation itself is not fixed, only relieved for one
+     constraint. v5 immediately demonstrated it again at the next weakest
+     point, emitting two defective nested-POST handlers once the freed capacity
+     went elsewhere. Any future rule added to this prompt should be expected to
+     cost an existing one, which is why correctness cannot rest on prompt
+     tuning and motivates deterministic verification in Agent 3.
 
-2. **Correctness is schema-specific, and structural validation does not detect
-   it** the two strongest false-pass cases in this iteration both survived
-   automated checking.
-   - _Cause:_ v3 satisfied all nine structural checks (parses, no fences,
-     correct imports, parameterised queries, no invented body columns) while
-     being unrunnable: it emitted `CURRENT_TIMESTAMP` as a bare JavaScript
-     identifier (`ReferenceError` at runtime) and shifted every `$n` parameter
-     one position out of alignment. `node --check` accepted it because both
-     faults are syntactically valid JavaScript. v4 then passed the same checks
-     _and_ ran correctly on the blog fixture, but on the orders schema its PUT
-     handlers compute the id placeholder as `$${cols.length * 2}` binding
-     three parameters while referencing `$4`.
+2. **The validation gate reported success on a file that is not valid
+   JavaScript** the syntax check relied on throughout this session accepted
+   an output that cannot be parsed or executed.
+   - _Observation:_ on Node v20.19.6, `node --check v5-orders.js` exits 0,
+     while the file contains `["$" + (i + 1) for (i in cols)]` a legacy array
+     comprehension that is not valid in any current JavaScript dialect.
+     Controlled variation on that single line, everything else held constant:
+
+     | file under test                         | exit |
+     | --------------------------------------- | ---- |
+     | the line alone in a plain `.js` file    | 1    |
+     | same file, with `import`/`export` added | 0    |
+     | byte-identical file renamed `.mjs`      | 1    |
+
+     The one varying factor is the presence of ES module syntax under a `.js`
+     extension. **What is established is the behaviour, not its cause:** these
+     runs do not show whether Node skips parsing, parses under different
+     semantics, or bails early, and no claim about the mechanism is made here.
+     The observation alone is sufficient the gate returned success on a file
+     that is not valid ESM.
+
+   - _Consequence:_ every Agent 2 output is an ES module written to a `.js`
+     file, so **every "parses" verdict recorded during this session was
+     unearned.** Re-checked afterwards with a working gate: v1v4 and v5-blog
+     genuinely parse, v5-orders does not. The earlier verdicts happened to
+     hold, but they were luck, not measurement.
+   - _Mitigation:_ Layer 1 of Agent 3 must parse via `.mjs` or
+     `node --input-type=module --check`, never `node --check` on a `.js` path.
+   - _Relevance to the thesis:_ this is first-hand evidence for the central
+     claim that generated artefacts require deterministic verification rather
+     than trust. The failure is not that a check was missing it is that a
+     standard, widely trusted tool **reported success on invalid input**, and
+     did so convincingly enough to go unnoticed across four prompt versions. It
+     answers directly why a deterministic AST-based verifier is worth building
+     when `node --check` already exists: because `node --check` returned
+     success for a file that will not parse. A gate whose success signal cannot
+     be distinguished from silence provides no assurance at all, which is the
+     strongest available argument for Agent 3 verifying against a parser it
+     controls rather than delegating to a shell call whose failure mode is
+     invisible.
+
+3. **Correctness is schema-specific, and structural checks miss what matters**
+   passing every structural check is not evidence of a working backend.
+   - _Cause:_ v3 satisfied all nine structural checks (no fences, correct
+     imports, parameterised queries, no invented body columns) while being
+     unrunnable: it emitted `CURRENT_TIMESTAMP` as a bare JavaScript identifier
+     (`ReferenceError` at runtime) and shifted every `$n` parameter one
+     position out of alignment both faults are syntactically valid
+     JavaScript. v4 then passed the same checks _and_ ran correctly on the blog
+     fixture, but on the orders schema its PUT handlers compute the id
+     placeholder as `$${cols.length * 2}` binding three parameters while
+     referencing `$4`. v5 repeated the pattern at a third level: `v5-blog`
+     parses perfectly and is still wrong, reading a URL parameter from the
+     request body.
    - _Mitigation:_ none at the prompt layer. Recorded as a measurement problem.
    - _Residual risk:_ **an evaluation harness that scores Agent 2 on parse
      success and structural checks will score broken backends as passes.**
      Scoring must execute the generated routes against a live schema, and must
      use more than one fixture a single fixture demonstrated correctness that
      did not generalise to the second schema tested.
+   - _Specification value:_ the two v5 defects are a live specification for the
+     verifier, one per layer. The orders array comprehension is a syntax error
+     only a real parser catches (Layer 1). The blog `req.body`/`req.params`
+     confusion parses cleanly and is only catchable by checking the handler
+     against the route's declared parameters and the schema (Layer 2). These
+     came from real runs, not synthetic examples.
 
-3. **Column hallucination under instruction pressure** v4 emits UPDATEs
-   referencing an `updated_at` column on schemas that do not declare one.
+4. **Column hallucination under instruction pressure (resolved in v5)** v4
+   emitted UPDATEs referencing an `updated_at` column on schemas that do not
+   declare one.
    - _Cause:_ the prompt instructs the model to append
      `updated_at = CURRENT_TIMESTAMP` whenever the table declares that column.
      The conditional half is dropped (see limitation 1) while the imperative
@@ -134,13 +235,17 @@ in the generated module, and the router correctly used `customer_id` and
      the DDL yet appears in both PUT handlers; Postgres would reject these with
      `column "updated_at" of relation "customers" does not exist`. Instructing
      _harder_ made the output worse, not better.
-   - _Mitigation:_ pending. The intended fix is to delete the `updated_at`
-     section from Agent 2's prompt and have Agent 1 emit a Postgres trigger
-     instead, which is where a modify-timestamp belongs regardless.
-   - _Residual risk:_ until then, every PUT handler is suspect on any schema
-     without an `updated_at` column.
+   - _Mitigation:_ v5 deleted the `updated_at` instruction from Agent 2's
+     prompt. Verified on both fixtures: zero occurrences, and every column
+     referenced by the generated routes exists in its DDL. The second half
+     having Agent 1 emit a Postgres trigger, which is where a modify-timestamp
+     belongs regardless is not yet done.
+   - _Residual risk:_ until that trigger exists, `updated_at` is declared in
+     the schema but never maintained by anything. The column will silently hold
+     its insert-time value. This is a correctness gap that has moved from the
+     API layer to the schema layer, not one that has been closed.
 
-4. **Latency** Agent 2 ranges 181241 s per generation, against Agent 1's
+5. **Latency** Agent 2 ranges 181241 s per generation, against Agent 1's
    ~4.7 s warm median.
    - _Cause:_ Agent 2 emits a whole module (6-7.5 kB, ~40x Agent 1's output)
      on the same 4 GB VRAM split, so it pays the GPU/system-RAM penalty across
