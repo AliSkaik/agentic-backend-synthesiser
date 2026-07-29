@@ -50,3 +50,104 @@ Determinism is proven by byte-identical _output_, recorded under limitation 3.)
      but is **not guaranteed identical across model or Ollama version updates**,
      or across different hardware. Pinning the model tag is advisable before any
      result is treated as a fixed baseline.
+
+## Week 8 2026-07-29 Agent 2 API route architect (prompt iteration)
+
+**Done:** `src/agents/routeArchitect.js` constrained system prompt (Express
+routes from DDL, code-only), deterministic decoding, defensive fence-stripping,
+wired into `src/index.js` on Agent 1's output. Iterated the prompt across four
+versions against a fixed blog DDL fixture (users/posts/tags + `post_tags`
+junction) so only the prompt varied. All four produce valid, parseable ES
+modules. Working baseline: **v4**, with the correctness caveat in limitation 2.
+
+| criterion              | v1   | v2   | v3      | v4   |
+| ---------------------- | ---- | ---- | ------- | ---- |
+| valid / parses         | ✅   | ✅   | ✅      | ✅   |
+| 404 via `rowCount`     | ❌   | ✅   | ✅      | ✅   |
+| junction nested        | ✅\* | ✅   | ✅      | ✅   |
+| DEFAULT-col INSERT     | ❌   | ❌   | ✅      | ✅   |
+| `updated_at` on UPDATE | ❌   | ❌   | ⚠ broke | ❌   |
+| runtime-correct        | ✅   | ✅   | ❌      | ✅†  |
+| latency (s)            | 181  | 205  | 244     | 241  |
+| output (chars)         | 5945 | 6423 | 7581    | 7195 |
+
+\* v1 nested the junction table unprompted, before the rule existed.
+† on the blog fixture only see limitation 2.
+
+**Wrapper verification.** Confirmed `generate()` threads both `system` and
+`options` into the Ollama request body rather than silently dropping them: a
+Turkish-only system prompt changed the output language, two runs at
+`seed: 42` were byte-identical, and `seed: 999` at `temperature: 1.8` diverged.
+The determinism claimed for Agent 1 therefore also holds for Agent 2.
+
+**Cross-schema test.** Re-ran v4 on an unrelated Agent 1 output
+(customers/orders/order_line_items, 200 s, 13 routes) to check whether the
+worked examples embedded in the prompt contaminate other domains. No leakage:
+all nine example-specific tokens (`users`, `posts`, `tags`, `post_tags`,
+`title`, `content`, `author_id`, `username`, `password_hash`) appear zero times
+in the generated module, and the router correctly used `customer_id` and
+`order_id` as primary keys rather than the examples' `id`.
+
+### Technical limitations
+
+1. **Constraint saturation** the model cannot satisfy every constraint at once;
+   adding one reliably costs another.
+   - _Cause:_ each rule competes for the same limited instruction-following
+     capacity in a 7b model. Rules describing the _shape_ of the output (route
+     set, import lines, try/catch, status codes) survive, because they match
+     patterns dominant in its training data. Rules that are _conditional_ on
+     inspecting the input ("if the table declares `updated_at`…", "unless
+     `req.body` contains…") are dropped first, because they require the model
+     to hold a fact about the schema while generating unrelated code. v3 added
+     `updated_at` and broke runtime correctness; v4 restored runtime
+     correctness and lost `updated_at` again. Four versions, never both.
+   - _Mitigation:_ accepted v4, did not over-fit the prompt further.
+   - _Residual risk:_ `updated_at` is not guaranteed, so prompt tuning alone is
+     insufficient. Motivates deterministic verification in Agent 3.
+
+2. **Correctness is schema-specific, and structural validation does not detect
+   it** the two strongest false-pass cases in this iteration both survived
+   automated checking.
+   - _Cause:_ v3 satisfied all nine structural checks (parses, no fences,
+     correct imports, parameterised queries, no invented body columns) while
+     being unrunnable: it emitted `CURRENT_TIMESTAMP` as a bare JavaScript
+     identifier (`ReferenceError` at runtime) and shifted every `$n` parameter
+     one position out of alignment. `node --check` accepted it because both
+     faults are syntactically valid JavaScript. v4 then passed the same checks
+     _and_ ran correctly on the blog fixture, but on the orders schema its PUT
+     handlers compute the id placeholder as `$${cols.length * 2}` binding
+     three parameters while referencing `$4`.
+   - _Mitigation:_ none at the prompt layer. Recorded as a measurement problem.
+   - _Residual risk:_ **an evaluation harness that scores Agent 2 on parse
+     success and structural checks will score broken backends as passes.**
+     Scoring must execute the generated routes against a live schema, and must
+     use more than one fixture a single fixture demonstrated correctness that
+     did not generalise to the second schema tested.
+
+3. **Column hallucination under instruction pressure** v4 emits UPDATEs
+   referencing an `updated_at` column on schemas that do not declare one.
+   - _Cause:_ the prompt instructs the model to append
+     `updated_at = CURRENT_TIMESTAMP` whenever the table declares that column.
+     The conditional half is dropped (see limitation 1) while the imperative
+     half is retained, so the instruction becomes unconditional and the model
+     invents the column. On the orders schema `updated_at` occurs zero times in
+     the DDL yet appears in both PUT handlers; Postgres would reject these with
+     `column "updated_at" of relation "customers" does not exist`. Instructing
+     _harder_ made the output worse, not better.
+   - _Mitigation:_ pending. The intended fix is to delete the `updated_at`
+     section from Agent 2's prompt and have Agent 1 emit a Postgres trigger
+     instead, which is where a modify-timestamp belongs regardless.
+   - _Residual risk:_ until then, every PUT handler is suspect on any schema
+     without an `updated_at` column.
+
+4. **Latency** Agent 2 ranges 181241 s per generation, against Agent 1's
+   ~4.7 s warm median.
+   - _Cause:_ Agent 2 emits a whole module (6-7.5 kB, ~40x Agent 1's output)
+     on the same 4 GB VRAM split, so it pays the GPU/system-RAM penalty across
+     far more decoded tokens. Cost scales with output length, not task
+     difficulty.
+   - _Implication:_ an N=5 evaluation loop is ~20 min worst case, which exceeds
+     common HTTP client timeouts, so the driver needs an explicit timeout
+     rather than the default. Keep Agent 3's verification cheap and
+     deterministic; it cannot be another generative round-trip at this cost.
+     Revisit N, or cap output length, before the Week 9 baseline comparison.
