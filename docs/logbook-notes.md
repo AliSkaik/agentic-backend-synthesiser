@@ -183,8 +183,14 @@ pass, which limitation 3 shows is not evidence of correctness.
      unearned.** Re-checked afterwards with a working gate: v1v4 and v5-blog
      genuinely parse, v5-orders does not. The earlier verdicts happened to
      hold, but they were luck, not measurement.
-   - _Mitigation:_ Layer 1 of Agent 3 must parse via `.mjs` or
-     `node --input-type=module --check`, never `node --check` on a `.js` path.
+   - _Mitigation:_ **implemented** on 2026-07-30, see the Agent 3 Layer 1 entry
+     below. Neither option originally proposed here was taken: rather than
+     working around the shell command with `.mjs` or
+     `node --input-type=module --check`, Layer 1 parses in-process with Acorn
+     and declares `sourceType: "module"` itself. Both workarounds would still
+     have left the parser's configuration to be inferred from a filename or a
+     flag passed correctly every time; declaring it removes the inference that
+     caused the false pass rather than routing around it.
    - _Relevance to the thesis:_ this is first-hand evidence for the central
      claim that generated artefacts require deterministic verification rather
      than trust. The failure is not that a check was missing it is that a
@@ -256,3 +262,108 @@ pass, which limitation 3 shows is not evidence of correctness.
      rather than the default. Keep Agent 3's verification cheap and
      deterministic; it cannot be another generative round-trip at this cost.
      Revisit N, or cap output length, before the Week 9 baseline comparison.
+
+## Week 8 2026-07-30 Agent 3 integrity verifier (Layer 1)
+
+**Done:** `src/agents/integrityVerifier.js`. Exports `verifyIntegrity(code)`,
+which takes Agent 2's output as a string and answers one question: does it
+parse. Parsing is done in-process with Acorn 8.18.0 (`acorn` added as the
+project's first runtime dependency, committed separately from the verifier).
+
+**`sourceType: "module"` is declared, not inferred.** This is the structural
+answer to the false pass recorded in limitation 2 of the previous entry. The
+call is
+`acorn.parse(code, { ecmaVersion: "latest", sourceType: "module", locations: true })`.
+Agent 2 always emits an ES module, so the parser is told so directly. The
+earlier failure was not that a check was missing but that a shell command was
+left to infer its own parsing mode from a filename, and inferred one under
+which the check reported success on a module that does not parse. Owning the
+parser settings removes the inference rather than working around it, which is
+why Acorn was preferred over the `.mjs` and `--input-type=module` workarounds
+proposed when the defect was found.
+
+**Verified against the two real defects from the v5 run**, not synthetic
+examples:
+
+| input          | expected     | result                                   |
+| -------------- | ------------ | ---------------------------------------- |
+| `v5-orders.js` | reject       | `passed: false`, `SyntaxError` at 173:34 |
+| `v5-blog.js`   | pass Layer 1 | `passed: true`, AST returned (22 nodes)  |
+| `null`         | reject       | `passed: false`, `EmptyOutput`           |
+
+`v5-orders` is rejected at the array comprehension that `node --check` accepted.
+`v5-blog` passes, which is the correct verdict it is syntactically valid and
+still wrong, reading a URL parameter from the request body. The two defects
+therefore sit either side of the layer boundary and act as a specification: one
+is catchable only by a parser, the other only by a later relational check.
+
+**Failure results carry a rendered excerpt, not just a position.** On rejection
+the return value includes structured `error` fields (`type`, `message`, `line`,
+`column`) for logging and for counting failure types across a run, plus a
+`feedback` string containing the offending source line with a caret beneath it:
+
+```
+Layer 1 (syntax): the module you returned does not parse as JavaScript.
+Unexpected token at line 173, column 34:
+
+  173 |     const params = ["$" + (i + 1) for (i in cols)].join(", ");
+      |                                   ^
+
+Return the complete module again, corrected so that it parses as an ES module.
+```
+
+The excerpt exists because Agent 2 receives a plain string and never sees line
+numbers, so a bare `line: 173` is useless as correction input. Rendering it
+here, next to the error, keeps the re-prompt text with the component that
+knows the fault rather than requiring the driver to reassemble it later.
+
+**Empty-output guard.** `verifyIntegrity` returns a structured `EmptyOutput`
+result for a non-string or blank input instead of throwing. Added because
+Agent 2's scaffold returned `null` before its prompt existed, and a verifier
+that throws on empty input halts the loop it is meant to drive.
+
+### Design decision: `passed`, not `verified`
+
+The per-layer result field is called `passed`, and the module documents that
+`verified` is reserved for an orchestrator that has run every layer.
+
+- _Reasoning:_ a Layer 1 pass means the module parses. It does not mean the
+  module is correct `v5-blog` is the proof, passing Layer 1 while being
+  wrong. A field named `verified` returning `true` for that file would assert
+  more than the work performed, and a comment saying so does not prevent a
+  caller writing `if (result.verified)`. Renaming makes the mistake
+  structurally unavailable rather than merely discouraged.
+- _Why it matters here specifically:_ this is the same fault as the one in
+  limitation 2 of the previous entry a success signal that reads as more
+  assurance than was actually earned. Having identified that failure mode, it
+  would be indefensible to reproduce it inside the component built to prevent
+  it.
+- _Cost:_ none at present. Nothing imports the module yet, so the rename cost
+  no call-site changes; it would have once the driver and later layers depend
+  on it.
+
+### Technical limitations
+
+1. **Layer 1 is a necessary and very weak condition** it rejects only code
+   that cannot parse.
+   - _Cause:_ syntactic validity says nothing about whether routes match the
+     schema, parameters bind correctly, or handlers read from the right part of
+     the request. Of the defects observed across five Agent 2 versions, only
+     one (`v5-orders`) is caught here; the parameter misalignment in v3, the
+     invented `updated_at` column in v4, and the `req.body`/`req.params`
+     confusion in `v5-blog` all parse cleanly.
+   - _Implication:_ Layer 1 alone must never gate a result. Reporting a
+     Layer 1 pass as success would recreate the very false pass this component
+     was built in response to, which is why the return field is `passed` and
+     not `verified`.
+
+2. **The error-message normalisation depends on Acorn's formatting**
+   `err.message` has its trailing `(line:column)` stripped so identical faults
+   group together when failures are counted.
+   - _Cause:_ Acorn currently appends the position to the message text. This is
+     a formatting convention, not a documented API guarantee.
+   - _Bounded consequence:_ if the format changes the replacement becomes a
+     no-op and the position appears twice in the feedback string. That is
+     cosmetic. It cannot produce a wrong verdict: pass and fail are decided by
+     whether `acorn.parse` throws, and `err.loc` is the authoritative source of
+     line and column. The string handling is on the reporting path only.
