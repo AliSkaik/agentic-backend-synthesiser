@@ -120,8 +120,11 @@ v5 ships with two defects, both in nested-resource handlers:
   `["$" + (i + 1) for (i in cols)]`, a legacy array comprehension removed from
   JavaScript.
 - `v5-blog`'s nested POST reads `postId` from `req.body` when the route
-  declares it as `req.params`, so the insert always binds NULL and violates the
-  foreign key. This file parses cleanly.
+  declares it as `req.params`, so the insert always binds NULL for `post_id`.
+  That column is declared `INT NOT NULL`, so the statement fails the NOT NULL
+  constraint (SQLSTATE 23502) before the foreign key is evaluated a NULL
+  foreign-key column would itself be permitted, since unmatched NULLs pass an
+  FK check by design. This file parses cleanly.
 
 Both land on the one route type the prompt gives **no worked example** for.
 Every handler that has an example is clean on both fixtures. The reusable
