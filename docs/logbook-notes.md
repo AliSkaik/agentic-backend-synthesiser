@@ -370,3 +370,155 @@ The per-layer result field is called `passed`, and the module documents that
      cosmetic. It cannot produce a wrong verdict: pass and fail are decided by
      whether `acorn.parse` throws, and `err.loc` is the authoritative source of
      line and column. The string handling is on the reporting path only.
+
+## Week 8 — 2026-08-04 — Agent 3 relational validator (Layer 2)
+
+**Done:** `src/agents/relationalValidator.js`, a separate module from Layer 1
+returning the same result contract (`passed`, `layer`, `error`, `feedback`).
+Exports `validateRelations(ast, ddl)` and takes two inputs: the AST Layer 1
+returned on success, and the DDL Agent 1 produced. It never re-parses the
+source, so Layer 1 is a precondition rather than a suggestion. One assertion:
+**every column the routes reference exists in the schema.**
+
+Three steps. (1) Build `table → Set<column>` from the DDL. (2) Walk the AST for
+SQL strings passed to `pool.query`, tagged with the enclosing `router.<verb>`
+route and source line. (3) Test each referenced column for membership.
+
+**Fixtures are now in the repository** (`tests/fixtures/`). The v1–v5 outputs
+and both DDLs existed only in a session scratch directory and were one cleanup
+away from being lost, which would have made every earlier logbook claim
+unreproducible. Generated modules are stored as `.js.txt` so nothing attempts
+to import them — `v5-orders` does not parse, which is the point of keeping it.
+Run with `npm test`.
+
+| input       | expected     | result                                         |
+| ----------- | ------------ | ---------------------------------------------- |
+| `v4-orders` | fail Layer 2 | `passed: false`, `UnknownColumn`, 2 violations  |
+| `v4-blog`   | pass         | `passed: true`                                 |
+| `v5-blog`   | pass Layer 2 | `passed: true`                                 |
+| `v5-orders` | fail Layer 1 | never reaches Layer 2                          |
+
+**The proof case works.** `v4-orders` parses cleanly at Layer 1 — limitation 1
+of the previous entry lists it among the defects Layer 1 cannot see — and is
+rejected here, naming both call sites:
+
+```
+Layer 2 (schema): the routes reference columns that do not exist in the schema.
+
+- Column "updated_at" in route PUT /customers/:id (line 60): table "customers"
+  has no such column. Its columns are: customer_id, first_name, last_name,
+  email, status.
+- Column "updated_at" in route PUT /orders/:id (line 139): table "orders" has
+  no such column. Its columns are: order_id, customer_id, order_date,
+  total_amount, status.
+```
+
+**`v4-blog` is the control that makes the result mean anything.** It is the
+same generator version emitting the same `updated_at = CURRENT_TIMESTAMP`
+fragment, and it passes — because the blog schema declares `posts.updated_at`.
+The two cases differ only in the DDL, which is what distinguishes a
+schema-relative check from a blocklist on the string `updated_at`. Without this
+case the v4-orders rejection would be indistinguishable from hard-coding the
+answer.
+
+All violations are reported together rather than one at a time. Agent 2
+regenerates the whole module regardless, so a single-violation result would
+spend a ~200 s round trip per defect.
+
+### Design decision: matching is per-table, not against a union of all columns
+
+- _Reasoning:_ the union is too permissive on exactly the schemas being
+  generated. In the orders fixture `customer_id` is declared on both
+  `customers` and `orders`, and `order_id` on both `orders` and
+  `order_line_items`. Under a union check `UPDATE order_line_items SET
+  customer_id = $1` passes, because the name exists somewhere — while Postgres
+  rejects it. Per-table matching is the assertion the database actually makes,
+  and Layer 2 is only worth building if it predicts that.
+- _Cost:_ near zero. Agent 2 emits single-table statements exclusively, so the
+  target is whatever follows `INSERT INTO`, `UPDATE`, or `FROM`. No aliases, no
+  joins, no resolution to do.
+- _Fallback:_ where the target cannot be determined the check widens to the
+  union rather than guessing, and records `table: null` so the weakened verdict
+  is visible in the result instead of silent.
+- _Why that direction:_ the error costs are asymmetric. A false failure sends
+  Agent 2 into a repair loop on correct code at ~200 s per regeneration and
+  teaches it to "fix" something that was never broken. A miss costs one
+  undetected defect that a later layer or the runtime still catches.
+
+**This was not hypothetical — the first implementation produced exactly that
+false failure.** `v5-blog` was rejected for referencing `post_id` on `tags`.
+The statement is `SELECT * FROM tags WHERE id IN (SELECT tag_id FROM post_tags
+WHERE post_id = $1)`, which is correct SQL: `post_id` belongs to the subquery's
+table. Target resolution had checked for JOINs and comma-separated `FROM` lists
+but not for a second table entering scope through a subquery, so it attributed
+an inner column to the outer table. Fixed by counting table-naming positions
+(`FROM`, `INSERT INTO`, `UPDATE`) and refusing to attribute when there is more
+than one, plus an explicit `( SELECT` test. Worth recording because the failure
+landed on the expensive side of the asymmetry above, on the first run, on real
+output — the fallback policy was not over-caution.
+
+### Design decision: completeness is not owned by Layer 2
+
+Chapter II frames verification as soundness _and_ completeness. Layer 2 owns
+soundness only — "every referenced column exists". Completeness — "every table
+has routes" — is assigned to a later coverage layer.
+
+- _Reasoning:_ the two fail in different directions and cannot share a gate. A
+  soundness failure means the code is definitely broken; Postgres raises
+  `column ... does not exist` on the first request. A completeness failure means
+  something _may_ be missing, and Agent 2's own prompt makes absence legitimate
+  — a junction table is explicitly not a resource and gets nested routes under
+  its owner instead. A gate blocking on completeness would reject correct output
+  for obeying its instructions.
+- _Feedback points the opposite way too:_ soundness names a defect to remove and
+  is directly actionable in a re-prompt. Completeness names work to add, which
+  is a coverage measurement — better scored than gated, at least until
+  legitimate exemptions can be recognised reliably.
+- _Consequence:_ `passed` at Layer 2 keeps a single meaning — nothing referenced
+  is wrong, not nothing is missing.
+
+### Technical limitations
+
+1. **The DDL reader is a lexical scan, not a SQL parser** — a deliberate
+   shortcut, recorded here rather than left implicit.
+
+   - _What it does:_ finds `CREATE TABLE` blocks by regex, matches parentheses
+     by counting depth, splits the body on top-level commas, and takes the first
+     identifier of each definition, skipping definitions beginning `PRIMARY`,
+     `FOREIGN`, `UNIQUE`, `CONSTRAINT`, `CHECK`, `EXCLUDE`, `LIKE`.
+   - _What it does not understand:_ `ALTER TABLE ... ADD COLUMN`, quoted
+     identifiers containing spaces or punctuation, inheritance or `LIKE`-cloned
+     tables, views, or a `CREATE TABLE` inside a string literal or comment.
+   - _Deviation from the sketched approach:_ splitting on top-level commas
+     rather than on newlines. Same shortcut class, same cost, but it also
+     handles a single-line `CREATE TABLE x (a INT, b INT)` correctly, which a
+     line-based split silently truncates to its first column.
+   - _Consequence:_ a missed column makes the schema map too small and turns a
+     valid column into a reported invention — a false failure, the expensive
+     direction. Verified correct on both current fixtures: all four blog tables
+     and all three orders tables parse to exactly their declared columns, with
+     `CREATE TYPE ... AS ENUM` blocks correctly ignored and `NUMERIC(10, 2)` not
+     mis-split.
+
+2. **Dynamically built column lists are invisible to this layer.**
+
+   - _Cause:_ Agent 2 builds INSERT and UPDATE column lists from a JavaScript
+     `allowed` array — `INSERT INTO customers (${cols.join(", ")})`. Only the
+     static text of a template literal is analysed, so those names never reach
+     the check.
+   - _Consequence:_ an invented column appearing _only_ in an `allowed` array
+     passes Layer 2 today. The hand-check performed on v4 in the previous entry
+     did read allowlists, so this layer is currently weaker than that manual
+     check on precisely that surface.
+   - _Next assertion:_ read array literals assigned to `allowed` and test their
+     members against the target table of the query they feed.
+
+3. **Layer 2 does not catch the `v5-blog` defect, despite the previous entry
+   implying it would.** That entry recorded the `req.body`/`req.params`
+   confusion as "only catchable by checking the handler against the route's
+   declared parameters and the schema (Layer 2)". Column existence is not that
+   check — `v5-blog` references only real columns and passes here, correctly.
+   Binding a URL parameter to the right request property is a separate
+   assertion over the same inputs; it belongs in this layer but is not yet
+   built. The earlier sentence overstated what a single assertion covers, and
+   the claim is corrected here rather than quietly satisfied.
