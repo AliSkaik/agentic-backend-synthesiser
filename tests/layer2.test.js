@@ -2,13 +2,17 @@
 // Fixtures are stored as .js.txt so Node never tries to load them as modules
 // v5-orders does not parse, which is the point of it.
 //
+// The layers are driven through verify(), not called directly, because verify()
+// now owns the chaining and the short-circuit these cases assert: v5-orders
+// must fail at Layer 1 and never reach Layer 2. Expected results are unchanged
+// from when the two layers were called by hand here.
+//
 //   node tests/layer2.test.js
 
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { verifyIntegrity } from "../src/agents/integrityVerifier.js";
-import { validateRelations } from "../src/agents/relationalValidator.js";
+import { verify } from "../src/verify.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => readFileSync(join(here, "fixtures", name), "utf8");
@@ -50,23 +54,15 @@ const cases = [
 let failures = 0;
 
 for (const testCase of cases) {
-  const layer1 = verifyIntegrity(testCase.code);
-
-  let actual;
-  let result = layer1;
-  if (!layer1.passed) {
-    actual = "fail-layer1";
-  } else {
-    result = validateRelations(layer1.ast, testCase.ddl);
-    actual = result.passed ? "pass" : "fail-layer2";
-  }
+  const result = verify(testCase.code, testCase.ddl);
+  const actual = result.verified ? "pass" : `fail-layer${result.layer}`;
 
   const ok = actual === testCase.expect;
   if (!ok) failures += 1;
 
   console.log(`${ok ? "OK  " : "FAIL"}  ${testCase.name.padEnd(10)} expected ${testCase.expect}, got ${actual}`);
   console.log(`      ${testCase.why}`);
-  if (!result.passed) {
+  if (!result.verified) {
     console.log(`      error: ${result.error.type} ${result.error.message}`);
   }
   console.log();
@@ -74,8 +70,7 @@ for (const testCase of cases) {
 
 console.log("--- Layer 2 feedback for v4-orders ---\n");
 const proof = cases[0];
-const parsed = verifyIntegrity(proof.code);
-console.log(validateRelations(parsed.ast, proof.ddl).feedback);
+console.log(verify(proof.code, proof.ddl).feedback);
 
 console.log(`\n${cases.length - failures}/${cases.length} cases as expected`);
 process.exit(failures === 0 ? 0 : 1);
