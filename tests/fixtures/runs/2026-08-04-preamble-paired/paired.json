@@ -1,0 +1,75 @@
+{
+  "seedRoutes": 13,
+  "recordedSha256": "799ad20a4fa4a86556a20aa4546cf020597ac709ece9940f101bd2656ba58222",
+  "recordedRoutes": 10,
+  "armA": {
+    "arm": "A-with-preamble",
+    "outcome": "verified",
+    "verified": true,
+    "attempts": [
+      {
+        "attempt": 1,
+        "source": "seed",
+        "latencyMs": null,
+        "outputChars": 6349,
+        "routeCount": 13,
+        "verified": false,
+        "failedLayer": 2,
+        "errorType": "UnknownColumn",
+        "violationCount": 2,
+        "feedbackSent": true
+      },
+      {
+        "attempt": 2,
+        "source": "generated",
+        "latencyMs": 142656,
+        "outputChars": 4242,
+        "routeCount": 10,
+        "verified": true,
+        "failedLayer": null,
+        "errorType": null,
+        "violationCount": 0,
+        "feedbackSent": false
+      }
+    ],
+    "repairChars": 4242,
+    "repairRoutes": 10,
+    "repairSha256": "799ad20a4fa4a86556a20aa4546cf020597ac709ece9940f101bd2656ba58222"
+  },
+  "armB": {
+    "arm": "B-critique-only",
+    "preamble": null,
+    "outcome": "verified",
+    "verified": true,
+    "attempts": [
+      {
+        "attempt": 1,
+        "source": "seed",
+        "latencyMs": null,
+        "outputChars": 6349,
+        "routeCount": 13,
+        "verified": false,
+        "failedLayer": 2,
+        "errorType": "UnknownColumn",
+        "violationCount": 2,
+        "feedbackSent": true
+      },
+      {
+        "attempt": 2,
+        "source": "generated",
+        "latencyMs": 166687,
+        "outputChars": 5558,
+        "routeCount": 13,
+        "verified": true,
+        "failedLayer": null,
+        "errorType": null,
+        "violationCount": 0,
+        "feedbackSent": false
+      }
+    ],
+    "repairChars": 5558,
+    "repairRoutes": 13,
+    "repairSha256": "17ccab82326e9dbe41328ffeb5655c8a213a81581d4e2bb22bcf93c0e69d6a74"
+  },
+  "armAReproducesRecordedRun": true
+}

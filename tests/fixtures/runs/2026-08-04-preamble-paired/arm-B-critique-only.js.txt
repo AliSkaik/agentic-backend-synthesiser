@@ -1,0 +1,188 @@
+import { Router } from "express";
+import { pool } from "../db.js";
+
+const router = Router();
+
+router.get("/customers", async (req, res, next) => {
+  try {
+    const result = await pool.query("SELECT * FROM customers");
+    res.status(200).json(result.rows);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/customers/:id", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query("SELECT * FROM customers WHERE customer_id = $1", [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    res.status(200).json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/customers", async (req, res, next) => {
+  try {
+    const allowed = ["first_name", "last_name", "email", "status"];
+    const cols = allowed.filter((c) => req.body[c] !== undefined);
+    if (cols.length === 0) {
+      return res.status(400).json({ error: "Empty body" });
+    }
+    const values = cols.map((c) => req.body[c]);
+    const params = cols.map((_, i) => "$" + (i + 1));
+    const result = await pool.query(
+      "INSERT INTO customers (" + cols.join(", ") + ") VALUES (" + params.join(", ") + ") RETURNING *",
+      values
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put("/customers/:id", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { first_name, last_name, email, status } = req.body;
+    const result = await pool.query(
+      "UPDATE customers SET first_name = $1, last_name = $2, email = $3, status = $4 WHERE customer_id = $5 RETURNING *",
+      [first_name, last_name, email, status, id]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    res.status(200).json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete("/customers/:id", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query("DELETE FROM customers WHERE customer_id = $1", [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/orders", async (req, res, next) => {
+  try {
+    const result = await pool.query("SELECT * FROM orders");
+    res.status(200).json(result.rows);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/orders/:id", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query("SELECT * FROM orders WHERE order_id = $1", [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    res.status(200).json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/orders", async (req, res, next) => {
+  try {
+    const allowed = ["customer_id", "total_amount", "status"];
+    const cols = allowed.filter((c) => req.body[c] !== undefined);
+    if (cols.length === 0) {
+      return res.status(400).json({ error: "Empty body" });
+    }
+    const values = cols.map((c) => req.body[c]);
+    const params = cols.map((_, i) => "$" + (i + 1));
+    const result = await pool.query(
+      "INSERT INTO orders (" + cols.join(", ") + ") VALUES (" + params.join(", ") + ") RETURNING *",
+      values
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put("/orders/:id", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { customer_id, total_amount, status } = req.body;
+    const result = await pool.query(
+      "UPDATE orders SET customer_id = $1, total_amount = $2, status = $3 WHERE order_id = $4 RETURNING *",
+      [customer_id, total_amount, status, id]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    res.status(200).json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete("/orders/:id", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query("DELETE FROM orders WHERE order_id = $1", [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/orders/:orderId/order_line_items", async (req, res, next) => {
+  try {
+    const { orderId } = req.params;
+    const result = await pool.query("SELECT * FROM order_line_items WHERE order_id = $1", [orderId]);
+    res.status(200).json(result.rows);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/orders/:orderId/order_line_items", async (req, res, next) => {
+  try {
+    const { orderId } = req.params;
+    const { product_name, quantity, price } = req.body;
+    const result = await pool.query(
+      "INSERT INTO order_line_items (order_id, product_name, quantity, price) VALUES ($1, $2, $3, $4) RETURNING *",
+      [orderId, product_name, quantity, price]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete("/orders/:orderId/order_line_items/:lineItemId", async (req, res, next) => {
+  try {
+    const { orderId, lineItemId } = req.params;
+    const result = await pool.query(
+      "DELETE FROM order_line_items WHERE order_id = $1 AND line_item_id = $2",
+      [orderId, lineItemId]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
+export default router;

@@ -651,3 +651,97 @@ than against a correct one.
      a `TypeError` inside `stripFences` — a fence-stripping function detecting a
      transport fault. The outcome was right by accident and the transcript named
      the wrong cause. It is now raised where the status is known.
+
+## Week 8 — 2026-08-04 — controlled test of the feedback preamble
+
+**Done:** the paired run that limitation 2 of the previous entry called for,
+executed immediately rather than deferred. Artefacts in
+`tests/fixtures/runs/2026-08-04-preamble-paired/`.
+
+Two arms, differing in one line of the user prompt and nothing else. Arm A sends
+DDL + the framing sentence "Your previous attempt at this task was rejected by
+an automated check." + Agent 3's critique. Arm B sends DDL + the critique. Same
+seed candidate, same DDL, same system prompt, same `temperature: 0, seed: 42`.
+
+| | seed | arm A (with preamble) | arm B (critique only) |
+| ------------------ | ---- | --------------------- | --------------------- |
+| routes             | 13   | **10**                | **13**                |
+| chars              | 6 349 | 4 242                | 5 558                 |
+| `updated_at` refs  | 2    | 0                     | 0                     |
+| latency            | —    | 142 656 ms            | 166 687 ms            |
+| verdict            | fail Layer 2 | verified      | verified              |
+
+**Both arms repaired the named defect. Only the arm carrying the preamble
+deleted routes.** Arm B removed the invented `updated_at` and kept all three
+`order_line_items` routes.
+
+### The previous entry's attribution was wrong, and is corrected here
+
+That entry explains the 13 → 10 route loss as constraint saturation — the model
+taking the cheapest path to satisfying a soundness gate, since deleting a route
+removes the offending column reference. **That mechanism is still correct about
+why the gate cannot catch the loss**, and the design consequence drawn from it
+stands: a soundness gate cannot detect deletion, so the deferred coverage score
+is load-bearing.
+
+But it is not what triggered the loss. The trigger was the preamble — a sentence
+added to the prompt on my own judgement, never justified by evidence, and
+identified as an uncontrolled variable only after the run it contaminated. The
+critique alone repairs without collateral damage on this input. The earlier
+entry presented a prompt artefact as a property of feedback-driven repair, and
+that reading would have gone into Chapter IV unchallenged had the variable not
+been flagged.
+
+Recording it this way round rather than editing the earlier entry, on the same
+principle as the Layer 2 correction: the claim is corrected where it is
+disproved, not quietly satisfied.
+
+### Determinism now established across processes, not assumed
+
+Arm A reproduced the module recorded earlier the same day **byte-for-byte**
+(`sha256 799ad20a…`), in a separate process on a separate invocation.
+
+This had been assumed from the Week 7 Agent 1 result and a within-session Week 8
+check, and the whole re-prompting argument depends on it: if generation were not
+deterministic, the loop would be retrying rather than re-prompting, and no
+difference between attempts could be attributed to the feedback. It is now
+tested for Agent 2 across process boundaries.
+
+It also upgrades what the paired run can claim. Because generation is
+deterministic, the arm A / arm B difference **cannot be sampling noise** — the
+only varying input was the preamble. Within this case the attribution is causal,
+not correlational.
+
+### Technical limitations
+
+1. **One input. The result is clean, not general.** One schema, one defect class
+   (Layer 2 / `UnknownColumn`), one critique, one comparison. Determinism rules
+   out noise *within* this case; it says nothing about whether the preamble
+   harms on the blog schema, on a Layer 1 syntax repair, or on a different
+   critique. The honest claim is "on this input the preamble caused the
+   deletion", not "the preamble is harmful".
+   - _Next:_ the same pair on `blog-schema.sql`, and on `v5-orders` so the
+     Layer 1 repair path is exercised live for the first time.
+
+2. **The preamble default is unchanged pending that evidence.**
+   `DEFAULT_FEEDBACK_PREAMBLE` still carries the sentence; omitting it is
+   `preamble: null`. Flipping the default on a single observation would repeat
+   the error that produced the sentence in the first place — a prompt decision
+   taken on judgement rather than evidence. The parameter exists so the question
+   stays answerable; the answer needs more than n = 1.
+   - _Standing risk while it stays:_ every live run recorded until it is settled
+     carries a variable known to affect output on at least one input.
+
+3. **Why the preamble might cause deletion is not established.** A plausible
+   reading is that framing the turn as a rejection shifts the model toward
+   producing something minimal and safe, and that this competes with the route
+   set for the same instruction-following capacity (limitation 1 of the Agent 2
+   entry). **That is a hypothesis with no evidence behind it.** What is measured
+   is that the sentence changes the output; the reason is not.
+
+4. **`chars` and `routes` disagree about which repair is "smaller".** Arm B is
+   larger than arm A (5 558 vs 4 242) and also more complete (13 vs 10 routes),
+   so on this input output size tracks completeness. Do not read `outputChars`
+   as a quality signal in either direction — `routeCount` is the field that
+   answered this question, and it only exists because the earlier run's loss was
+   invisible without it.
