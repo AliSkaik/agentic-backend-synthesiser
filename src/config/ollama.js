@@ -24,6 +24,22 @@ export class OllamaTimeoutError extends Error {
   }
 }
 
+// Thrown when Ollama answers with a non-2xx status. Without this check the body
+// of an error response still parses as JSON, `data.response` is `undefined`,
+// and the fault only surfaces further downstream as a TypeError inside
+// whichever caller first treats the result as a string. That reaches the loop
+// as `errorType: "TypeError"`, which names the wrong thing entirely and puts
+// the detection of a transport fault inside a function whose job is stripping
+// markdown fences. The status is known here, so it is raised here.
+export class OllamaResponseError extends Error {
+  constructor(status, statusText) {
+    super(`Ollama returned HTTP ${status}${statusText ? ` ${statusText}` : ""}`);
+    this.name = "OllamaResponseError";
+    this.type = "OllamaResponse";
+    this.status = status;
+  }
+}
+
 export async function generate(
   prompt,
   { system, options, timeoutMs = DEFAULT_TIMEOUT_MS } = {}
@@ -41,6 +57,7 @@ export async function generate(
       }),
       signal: AbortSignal.timeout(timeoutMs),
     });
+    if (!res.ok) throw new OllamaResponseError(res.status, res.statusText);
     const data = await res.json();
     return data.response;
   } catch (err) {
