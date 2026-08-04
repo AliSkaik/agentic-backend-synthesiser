@@ -69,10 +69,32 @@ function stripFences(text) {
   return text.replace(/```(?:javascript|js)?/gi, "").trim();
 }
 
-export async function designRoutes(ddl) {
-  const raw = await generate(ddl, {
+// Feedback from Agent 3 is appended to the USER prompt, never merged into
+// SYSTEM_INSTRUCTION. The system prompt is the artefact under study across
+// v1-v5; mutating it inside a repair loop would mean the prompt-iteration
+// experiment and the reflection experiment are no longer measuring separate
+// things, and no result from either could be attributed to one cause.
+//
+// Only the single latest feedback string is ever passed. Accumulating critiques
+// is ruled out by Week 8 limitation 1 (constraint saturation) each added rule
+// costs an existing one, so spending capacity on history rather than on the
+// correction is the wrong trade at 7b.
+function buildPrompt(ddl, feedback) {
+  if (!feedback) return ddl;
+  return [
+    ddl,
+    "",
+    "Your previous attempt at this task was rejected by an automated check.",
+    "",
+    feedback,
+  ].join("\n");
+}
+
+export async function designRoutes(ddl, { feedback = null, timeoutMs } = {}) {
+  const raw = await generate(buildPrompt(ddl, feedback), {
     system: SYSTEM_INSTRUCTION,
     options: { temperature: 0, seed: 42 },
+    timeoutMs,
   });
   return stripFences(raw);
 }
