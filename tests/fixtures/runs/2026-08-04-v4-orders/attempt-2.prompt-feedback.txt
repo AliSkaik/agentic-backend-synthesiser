@@ -1,0 +1,8 @@
+Layer 2 (schema): the routes reference columns that do not exist in the schema.
+
+- Column "updated_at" in route PUT /customers/:id (line 60): table "customers" has no such column. Its columns are: customer_id, first_name, last_name, email, status.
+- Column "updated_at" in route PUT /orders/:id (line 139): table "orders" has no such column. Its columns are: order_id, customer_id, order_date, total_amount, status.
+
+Every column named in a SQL statement must be declared in the DDL you were
+given. Do not invent columns. Return the complete module again, using only
+the declared columns.

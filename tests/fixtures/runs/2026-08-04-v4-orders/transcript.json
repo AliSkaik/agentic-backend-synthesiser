@@ -1,0 +1,31 @@
+{
+  "wallClockMs": 149627,
+  "code": "(emitted, see attempt files)",
+  "verified": true,
+  "outcome": "verified",
+  "error": null,
+  "attempts": [
+    {
+      "attempt": 1,
+      "source": "seed",
+      "latencyMs": null,
+      "outputChars": 6349,
+      "verified": false,
+      "failedLayer": 2,
+      "errorType": "UnknownColumn",
+      "violationCount": 2,
+      "feedbackSent": true
+    },
+    {
+      "attempt": 2,
+      "source": "generated",
+      "latencyMs": 149592,
+      "outputChars": 4242,
+      "verified": true,
+      "failedLayer": null,
+      "errorType": null,
+      "violationCount": 0,
+      "feedbackSent": false
+    }
+  ]
+}
