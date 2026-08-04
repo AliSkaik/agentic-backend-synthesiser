@@ -79,19 +79,29 @@ function stripFences(text) {
 // is ruled out by Week 8 limitation 1 (constraint saturation) each added rule
 // costs an existing one, so spending capacity on history rather than on the
 // correction is the wrong trade at 7b.
-function buildPrompt(ddl, feedback) {
+// The sentence framing the critique. Without it a re-prompt reads as a second,
+// unrelated instruction block rather than as a correction to the first.
+//
+// It is a parameter rather than a literal because it is an EXPERIMENTAL
+// VARIABLE, not a detail. A repair prompt carries two things that could be
+// causing a repair: Agent 3's critique, and this framing. The first live run
+// (2026-08-04) could not tell them apart, so it supports "the model repaired
+// from the critique plus this sentence" and not the stronger claim. Passing
+// `preamble: null` omits it, which is what makes the two separable.
+export const DEFAULT_FEEDBACK_PREAMBLE =
+  "Your previous attempt at this task was rejected by an automated check.";
+
+function buildPrompt(ddl, feedback, preamble) {
   if (!feedback) return ddl;
-  return [
-    ddl,
-    "",
-    "Your previous attempt at this task was rejected by an automated check.",
-    "",
-    feedback,
-  ].join("\n");
+  if (!preamble) return [ddl, "", feedback].join("\n");
+  return [ddl, "", preamble, "", feedback].join("\n");
 }
 
-export async function designRoutes(ddl, { feedback = null, timeoutMs } = {}) {
-  const raw = await generate(buildPrompt(ddl, feedback), {
+export async function designRoutes(
+  ddl,
+  { feedback = null, timeoutMs, preamble = DEFAULT_FEEDBACK_PREAMBLE } = {}
+) {
+  const raw = await generate(buildPrompt(ddl, feedback, preamble), {
     system: SYSTEM_INSTRUCTION,
     options: { temperature: 0, seed: 42 },
     timeoutMs,
