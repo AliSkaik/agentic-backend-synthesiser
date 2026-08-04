@@ -522,3 +522,132 @@ has routes" — is assigned to a later coverage layer.
    assertion over the same inputs; it belongs in this layer but is not yet
    built. The earlier sentence overstated what a single assertion covers, and
    the claim is corrected here rather than quietly satisfied.
+
+## Week 8 — 2026-08-04 — N=5 reflection loop (Agent 3 completion)
+
+**Done:** `src/verify.js` and `src/reflect.js`, plus an explicit timeout on the
+Ollama call and a `feedback` argument on Agent 2.
+
+`verify(code, ddl)` runs Layer 1, short-circuits on failure — Layer 2 consumes
+Layer 1's AST and is unrunnable without it — and returns `verified: true` only
+when both layers pass. It is the only module permitted to set that word. The
+header of `integrityVerifier.js` had reserved it for "the orchestrator that runs
+all of them", which until now was a rule stated in a comment and enforced
+nowhere. The four fixture cases moved onto `verify()` unchanged, and still give
+the same four verdicts.
+
+`reflect(ddl, options)` is the loop: generate, verify, and on failure re-prompt
+Agent 2 with the DDL plus the single latest `feedback` string, up to five
+generations in total (one initial, four repairs). On exhaustion it emits
+nothing. Its whole view of Agent 3 is one boolean and one string, so a third
+layer requires no change to it.
+
+**The loop cannot retry, only re-prompt.** Agent 2 runs at `temperature: 0,
+seed: 42`, so an unchanged request returns a byte-identical module. The only
+reason attempt *k+1* can differ from attempt *k* is that the prompt changed, and
+the only thing changing it is Agent 3's `feedback`. That retrospectively
+justifies rendering the offending source line with a caret inside Layer 1
+rather than returning a bare line number: Agent 2 receives a plain string and
+never sees the structured error, so `line: 173` alone would not be correction
+input.
+
+### First live run: converged on attempt 2, and lost a third of the API doing it
+
+Seeded from `v4-orders` against the orders schema, so attempt 1 cost no
+generation. One run, nothing tuned.
+
+| attempt | source    | latency    | chars | routes | verdict                           |
+| ------- | --------- | ---------- | ----- | ------ | --------------------------------- |
+| 1       | seed      | —          | 6 349 | 13     | fail Layer 2, 2 × `UnknownColumn` |
+| 2       | generated | 149 592 ms | 4 242 | 10     | **verified**                      |
+
+The named defect was repaired: `updated_at` occurs twice in the seed and zero
+times in the repair. The module also lost all three `order_line_items` routes.
+`verify()` returned `verified: true` on it, correctly — the gate asserts
+soundness, and the shrunken module is sound.
+
+**Deleting a route is a valid way to satisfy a soundness check**, because it
+removes the offending column reference. Under constraint saturation
+(limitation 1 of the Agent 2 entry) the cheapest path to compliance is to emit
+less, and that is the path taken. This is the cost anticipated when the design
+chose to forward only the latest feedback — "may repair the named defect while
+re-breaking something an earlier attempt had right" — observed on the first live
+run rather than in principle.
+
+What was not anticipated is that **the transcript hid it.** It recorded a clean
+two-attempt convergence; the loss was found by reading the two modules side by
+side, which will not happen across a full run. A `routeCount` per attempt is now
+recorded for exactly this reason, with a stub case asserting that a
+repair-by-deletion stays visible in the transcript despite a `verified` verdict.
+The count is lexical rather than AST-based deliberately: an attempt that fails
+Layer 1 has no AST, and those are precisely the attempts worth comparing against
+their successor.
+
+**This does not reverse the decision that completeness is not gated** (see the
+Layer 2 entry — a junction table legitimately has no routes, so a completeness
+gate would reject correct output). It changes the priority of the coverage score
+that entry defers: the loop actively pressures the model toward deletion, so
+coverage is now load-bearing rather than a later refinement.
+
+### `order_line_items` is misclassified by Agent 2, in both directions
+
+It has a `SERIAL PRIMARY KEY` (`line_item_id`), so under Agent 2's own system
+prompt it is a resource and should have five top-level routes. The seed nested
+it under `/orders` as though it were a join table; the repair dropped it
+entirely. Neither is right. **This predates the loop and is not caused by it** —
+recorded here because it surfaced while reading the run, and because it means
+the 13 → 10 route loss is a regression against an already-wrong baseline rather
+than against a correct one.
+
+### Technical limitations
+
+1. **Convergence is measured on n = 1.** One run, one fixture, one defect class
+   (Layer 2 / `UnknownColumn`), seeded rather than generated.
+   - _Consequence:_ "converged on attempt 2" is an observation, not a
+     convergence rate. The Layer 1 syntax-repair path (`v5-orders`) has never
+     been run against the live model — only against the stub. Nothing yet
+     establishes that syntax feedback repairs anything.
+   - _Not re-run after the finding._ A second run issued after seeing the route
+     deletion is the beginning of tuning, which limitation 3 of the Agent 2
+     entry already shows is not evidence of correctness.
+
+2. **The feedback preamble is an uncontrolled variable.** The user prompt sent
+   on a repair is the DDL, then the line "Your previous attempt at this task was
+   rejected by an automated check.", then Agent 3's `feedback` verbatim.
+   - _Cause:_ the design fixed _where_ feedback goes (user prompt, never the
+     system prompt) but not what frames it, and a re-prompt with no framing at
+     all reads as a second, unrelated instruction block.
+   - _Consequence:_ the convergence above is attributable to the critique **plus
+     that sentence**, not to the critique alone. The two have not been
+     separated, so a claim of the form "the model repairs from deterministic
+     feedback" is not supported at the granularity it appears to be. **This can
+     produce a wrong attribution in Chapter IV, not a wrong verdict** — the gate
+     is unaffected either way.
+   - _Next:_ one paired run, same seed, with and without the preamble, before
+     any convergence figure is reported.
+
+3. **The 600 s timeout is untested at its own value.** What is proven is that
+   `AbortSignal.timeout` fires, that the abort is caught, and that it maps to a
+   distinctly named `OllamaTimeoutError` — proven at a 1 ms budget. 600 000 is a
+   constant chosen against the observed 181–244 s range, not one that has been
+   reached. Cosmetic risk only: a wrong constant produces a run that aborts or
+   waits longer than intended, never a wrong verdict.
+
+4. **Timeout classification depends on how undici names an abort.** It tests
+   `err.name === "TimeoutError"` and `err.cause?.name === "TimeoutError"` — the
+   same class of assumption already recorded for Acorn's message formatting.
+   - _Consequence:_ if a future Node changes it, the loop still ends and is
+     still typed `infrastructure`, because that is set by the catch rather than
+     by the error's name. Only `error.type` degrades to something less specific.
+     Cosmetic; it cannot turn a failure into a pass.
+
+5. **An infrastructure failure and a verification failure are typed apart, and
+   that had to be deliberate.** An Ollama error, a non-2xx response, or a
+   timeout ends the loop immediately as `infrastructure`; exhausting five
+   attempts is `unverified`. Conflating "the model produced bad code" with "the
+   model never answered" would corrupt the convergence rate directly.
+   - _Fault found and fixed while writing this up:_ `generate` never checked
+     `res.ok`, so a non-2xx returned `data.response === undefined`, which threw
+     a `TypeError` inside `stripFences` — a fence-stripping function detecting a
+     transport fault. The outcome was right by accident and the transcript named
+     the wrong cause. It is now raised where the status is known.
