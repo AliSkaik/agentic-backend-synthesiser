@@ -152,6 +152,42 @@ console.log("\n--- case 6: maxAttempts is honoured ---\n");
 }
 
 // ---------------------------------------------------------------------------
+// Regression guard for the defect the first live run exposed: a repair that
+// satisfies Layer 2 by DELETING routes rather than by correcting them. The
+// verdict is genuinely `verified` the gate asserts soundness, and the shrunken
+// module is sound so the only thing that can expose the loss is the
+// transcript. This asserts the loss is visible there.
+console.log("\n--- case 7: a shrinking repair is visible in the transcript ---\n");
+{
+  // BAD_LAYER2 has 13 routes and invents updated_at. CLEAN has 1 route and
+  // references only real columns the shape of a repair-by-deletion.
+  const gen = scripted([CLEAN]);
+  const run = await reflect(orders, { generate: gen, seedCandidate: BAD_LAYER2 });
+
+  check("run reports verified", run.verified === true);
+  check("attempt 1 route count", run.attempts[0].routeCount === 13, `got ${run.attempts[0].routeCount}`);
+  check("attempt 2 route count", run.attempts[1].routeCount === 1, `got ${run.attempts[1].routeCount}`);
+  check(
+    "routes lost despite a verified verdict",
+    run.attempts[1].routeCount < run.attempts[0].routeCount,
+    `${run.attempts[0].routeCount} -> ${run.attempts[1].routeCount}`
+  );
+}
+
+// ---------------------------------------------------------------------------
+// A module that does not parse still gets a route count, because a Layer 1
+// failure is exactly the case where the AST is unavailable and the comparison
+// against the next attempt still matters.
+console.log("\n--- case 8: route count survives an unparseable module ---\n");
+{
+  const gen = scripted([BAD_LAYER1, CLEAN]);
+  const run = await reflect(orders, { generate: gen });
+
+  check("attempt 1 failed layer 1", run.attempts[0].failedLayer === 1);
+  check("counted anyway", run.attempts[0].routeCount > 0, `got ${run.attempts[0].routeCount}`);
+}
+
+// ---------------------------------------------------------------------------
 console.log("\n--- transcript shape (attempt 2 of case 2) ---\n");
 {
   const gen = scripted([BAD_LAYER1, BAD_LAYER2, CLEAN]);
@@ -164,6 +200,7 @@ console.log("\n--- transcript shape (attempt 2 of case 2) ---\n");
     "feedbackSent",
     "latencyMs",
     "outputChars",
+    "routeCount",
     "source",
     "verified",
     "violationCount",

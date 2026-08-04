@@ -14,6 +14,31 @@ import { verify } from "./verify.js";
 
 export const DEFAULT_MAX_ATTEMPTS = 5;
 
+// Counts `router.<method>(` calls in the raw text.
+//
+// This is a REPORTING metric and never a verdict, which is what licenses a
+// regex here. Its purpose is to make one specific failure visible in the
+// transcript: the gate asserts soundness only, so deleting a route is a valid
+// way to stop referencing a column that does not exist. The first live run did
+// exactly that repaired the named column and silently dropped three
+// `order_line_items` routes and the transcript showed a clean convergence,
+// because nothing recorded that the API had shrunk. That was found by reading
+// two modules side by side, which will not happen across a full run.
+//
+// Deliberately lexical rather than AST-based: an attempt that fails Layer 1 has
+// no AST at all, and those are precisely the attempts worth comparing against
+// their successor. A lexical count is available for every attempt, verified or
+// not. It will miscount if a route is declared some other way (a method name
+// held in a variable, a router built by a helper); Agent 2's system prompt
+// mandates the literal form, so that is a tolerable inaccuracy in a number that
+// cannot change a pass into a fail.
+const ROUTE_CALL = /\brouter\s*\.\s*(?:get|post|put|patch|delete|all)\s*\(/g;
+
+function countRoutes(code) {
+  if (typeof code !== "string") return null;
+  return (code.match(ROUTE_CALL) ?? []).length;
+}
+
 // N=5 means five GENERATIONS in total: one initial plus up to four repairs.
 // Not one plus five. The alternative reading is equally natural and the figure
 // appears in the results, so it is fixed here.
@@ -69,6 +94,7 @@ export async function reflect(ddl, options = {}) {
           source: "generated",
           latencyMs: Math.round(performance.now() - started),
           outputChars: null,
+          routeCount: null,
           verified: false,
           failedLayer: null,
           errorType: err?.type ?? err?.name ?? "Error",
@@ -97,6 +123,9 @@ export async function reflect(ddl, options = {}) {
       source: seeded ? "seed" : "generated",
       latencyMs: seeded ? null : latencyMs,
       outputChars: typeof code === "string" ? code.length : null,
+      // A drop between consecutive attempts means a repair removed routes. The
+      // gate cannot see that, so the transcript must.
+      routeCount: countRoutes(code),
       verified: verdict.verified,
       failedLayer: verdict.layer,
       errorType: verdict.error?.type ?? null,
