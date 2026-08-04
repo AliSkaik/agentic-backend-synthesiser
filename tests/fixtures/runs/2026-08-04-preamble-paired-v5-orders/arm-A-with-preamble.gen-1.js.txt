@@ -1,0 +1,240 @@
+import { Router } from "express";
+import { pool } from "../db.js";
+
+const router = Router();
+
+router.get("/customers", async (req, res, next) => {
+  try {
+    const result = await pool.query("SELECT * FROM customers");
+    res.status(200).json(result.rows);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/customers/:id", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query("SELECT * FROM customers WHERE customer_id = $1", [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    res.status(200).json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/customers", async (req, res, next) => {
+  try {
+    const allowed = ["first_name", "last_name", "email"];
+    const cols = allowed.filter((c) => req.body[c] !== undefined);
+    if (cols.length === 0) {
+      return res.status(400).json({ error: "Empty body" });
+    }
+    const values = cols.map((c) => req.body[c]);
+    const params = cols.map((_, i) => "$" + (i + 1));
+    const result = await pool.query(
+      `INSERT INTO customers (${cols.join(", ")}) VALUES (${params.join(", ")}) RETURNING *`,
+      values
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put("/customers/:id", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const allowed = ["first_name", "last_name", "email"];
+    const cols = allowed.filter((c) => req.body[c] !== undefined);
+    if (cols.length === 0) {
+      return res.status(400).json({ error: "Empty body" });
+    }
+    const setClause = cols.map((c, i) => `${c} = $${i + 1}`).join(", ");
+    const values = cols.map((c) => req.body[c]);
+    values.push(id);
+    const result = await pool.query(
+      `UPDATE customers SET ${setClause} WHERE customer_id = $${cols.length + 1} RETURNING *`,
+      values
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    res.status(200).json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete("/customers/:id", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query("DELETE FROM customers WHERE customer_id = $1", [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/orders", async (req, res, next) => {
+  try {
+    const result = await pool.query("SELECT * FROM orders");
+    res.status(200).json(result.rows);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/orders/:id", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query("SELECT * FROM orders WHERE order_id = $1", [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    res.status(200).json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/orders", async (req, res, next) => {
+  try {
+    const allowed = ["customer_id", "total_amount"];
+    const cols = allowed.filter((c) => req.body[c] !== undefined);
+    if (cols.length === 0) {
+      return res.status(400).json({ error: "Empty body" });
+    }
+    const values = cols.map((c) => req.body[c]);
+    const params = cols.map((_, i) => "$" + (i + 1));
+    const result = await pool.query(
+      `INSERT INTO orders (${cols.join(", ")}) VALUES (${params.join(", ")}) RETURNING *`,
+      values
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put("/orders/:id", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const allowed = ["customer_id", "total_amount"];
+    const cols = allowed.filter((c) => req.body[c] !== undefined);
+    if (cols.length === 0) {
+      return res.status(400).json({ error: "Empty body" });
+    }
+    const setClause = cols.map((c, i) => `${c} = $${i + 1}`).join(", ");
+    const values = cols.map((c) => req.body[c]);
+    values.push(id);
+    const result = await pool.query(
+      `UPDATE orders SET ${setClause} WHERE order_id = $${cols.length + 1} RETURNING *`,
+      values
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    res.status(200).json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete("/orders/:id", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query("DELETE FROM orders WHERE order_id = $1", [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/order_line_items", async (req, res, next) => {
+  try {
+    const result = await pool.query("SELECT * FROM order_line_items");
+    res.status(200).json(result.rows);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/order_line_items/:id", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query("SELECT * FROM order_line_items WHERE line_item_id = $1", [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    res.status(200).json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/order_line_items", async (req, res, next) => {
+  try {
+    const allowed = ["order_id", "product_name", "quantity", "price"];
+    const cols = allowed.filter((c) => req.body[c] !== undefined);
+    if (cols.length === 0) {
+      return res.status(400).json({ error: "Empty body" });
+    }
+    const values = cols.map((c) => req.body[c]);
+    const params = cols.map((_, i) => "$" + (i + 1));
+    const result = await pool.query(
+      `INSERT INTO order_line_items (${cols.join(", ")}) VALUES (${params.join(", ")}) RETURNING *`,
+      values
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put("/order_line_items/:id", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const allowed = ["order_id", "product_name", "quantity", "price"];
+    const cols = allowed.filter((c) => req.body[c] !== undefined);
+    if (cols.length === 0) {
+      return res.status(400).json({ error: "Empty body" });
+    }
+    const setClause = cols.map((c, i) => `${c} = $${i + 1}`).join(", ");
+    const values = cols.map((c) => req.body[c]);
+    values.push(id);
+    const result = await pool.query(
+      `UPDATE order_line_items SET ${setClause} WHERE line_item_id = $${cols.length + 1} RETURNING *`,
+      values
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    res.status(200).json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete("/order_line_items/:id", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query("DELETE FROM order_line_items WHERE line_item_id = $1", [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
+export default router;

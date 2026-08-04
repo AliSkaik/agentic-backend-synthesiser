@@ -745,3 +745,114 @@ not correlational.
    as a quality signal in either direction — `routeCount` is the field that
    answered this question, and it only exists because the earlier run's loss was
    invisible without it.
+
+## Week 8 — 2026-08-04 — Layer 1 syntax repair, live for the first time
+
+**Done:** the `v5-orders` paired run. Artefacts in
+`tests/fixtures/runs/2026-08-04-preamble-paired-v5-orders/`. Same two-arm design
+as the `v4-orders` pair; the seed fails Layer 1 rather than Layer 2, so this is
+the first time the syntax-repair path has run against the live model at all.
+
+| | seed | arm A (preamble) | arm B (critique only) |
+| ----------------------- | ----- | ----------------- | --------------------- |
+| generations to converge | —     | **1**             | **1**                 |
+| latency                 | —     | 248 800 ms        | 227 444 ms            |
+| chars                   | 5 858 | 7 210             | 7 219                 |
+| routes                  | 13    | 15                | 15                    |
+| verdict                 | fail Layer 1 (`SyntaxError`) | verified | verified |
+
+**Syntax feedback repairs, and this was not a given.** The critique is a caret
+excerpt pointing at `["$" + (i + 1) for (i in cols)]` — a legacy array
+comprehension valid in no current dialect. Unlike the schema critique, which
+names a column to delete and lists the legal alternatives, this one identifies a
+construct the model must *replace* with something it has to invent. Both arms
+did so on the first repair. The design decision to render the offending line
+with a caret inside Layer 1, rather than return a bare line number for a driver
+to reassemble, is now supported by a live result rather than by argument alone.
+
+**Both arms also fixed the `order_line_items` misclassification**, unprompted.
+It has a `SERIAL PRIMARY KEY`, so under Agent 2's own prompt it is a resource;
+the seed nested it under `/orders` as though it were a join table. Both repairs
+promoted it to five top-level routes — 5 × 3 tables = 15. The previous entry
+recorded that misclassification as predating the loop and unaddressed; on this
+input the repair corrected it as a side effect.
+
+### The repair broke a rule the seed obeyed, in both arms
+
+Rule 1 of Agent 2's system prompt: *"PUT handlers are always written with a
+fixed SQL string… never build a PUT's SET list with .map or .join."*
+
+| | seed | arm A | arm B |
+| ------------------------------------- | ---- | ----- | ----- |
+| `setClause` built with `.map().join()` | 0    | 6     | 6     |
+| hardcoded `status = '…'` writes in PUT | 0    | 0     | **2** |
+
+The seed obeyed it exactly. Both repairs replaced the fixed string with a
+dynamically assembled SET clause. Arm B additionally appended a literal
+assignment, so every `PUT /customers/:id` resets `status` to `'active'` and
+every `PUT /orders/:id` resets it to `'pending'`, whatever the request said.
+
+**Both modules were returned as `verified: true`, correctly.** They parse, and
+`status` is a real column. Neither layer asserts anything about obeying the
+system prompt or about writing a column the caller never mentioned.
+
+This is constraint saturation (limitation 1 of the Agent 2 entry) arriving
+through a new door. Previously it appeared across prompt *versions* — adding a
+rule cost another. Here it appears across *attempts within one version*: the
+model spends its instruction-following capacity on the correction and drops a
+rule it had previously satisfied, with the system prompt unchanged.
+
+### Correction to the preamble finding — the evidence is now split
+
+The previous entry showed the preamble causing route deletion on `v4-orders`,
+and concluded it was an unforced addition with one controlled result against it.
+This run does not replicate that, and cuts the other way:
+
+| pair | arm A (preamble) | arm B (critique only) | worse arm |
+| ------------ | ---------------- | --------------------- | --------- |
+| `v4-orders` (Layer 2) | 10 routes, 3 deleted | 13 routes, intact | **A** |
+| `v5-orders` (Layer 1) | rule 1 violated | rule 1 violated **+ 2 forced status writes** | **B** |
+
+One controlled result each way. The plan recorded after the first pair — run
+this pair, then remove the preamble and date the change — was conditional on the
+evidence pointing one way. It does not, so **the default is unchanged and the
+question is reopened rather than closed.**
+
+The structural argument for removal still stands on its own: the preamble is an
+intervention that was added on judgement and has never had evidence *for* it,
+and "critique alone" is the baseline that needs no justification. That argument
+is unaffected by this run. What this run removes is the empirical support for
+acting on it now, which was a single observation and is now contradicted by a
+second.
+
+### Technical limitations
+
+1. **Collateral damage from a repair is not preamble-specific.** The route
+   deletion appeared in one arm; the rule-1 violation appears in both. The
+   general statement is that a repair regenerates the whole module and can lose
+   constraints the previous attempt satisfied — the preamble may modulate which
+   constraint is lost, but is not required for loss to happen.
+   - _Consequence:_ **this can produce a wrong verdict.** Arm B is emitted as
+     `verified: true` while silently overwriting `status` on every update. That
+     is worse than the defect the loop was repairing, and it is exactly the
+     false-pass class Agent 3 exists to prevent — reached by a route the gate
+     does not cover.
+
+2. **Neither layer asserts conformance to the system prompt.** Rule 1 is stated
+   in the prompt, was obeyed by the seed, and is violated by both repairs
+   without any layer objecting. A gate for it would be structural (is the PUT
+   SQL a `Literal` rather than a `TemplateLiteral`?) and is cheap on the AST
+   Layer 1 already produces.
+   - _Open question:_ whether prompt conformance belongs in the verifier at all,
+     or whether it is a measurement of the prompt rather than of the code. Not
+     resolved here.
+
+3. **A written column that the caller never supplied is invisible to Layer 2.**
+   `status = 'active'` references a real column, so soundness holds. The defect
+   is that the value is fabricated, which is an assertion about the relationship
+   between the request and the statement — the same shape as the `v5-blog`
+   `req.body`/`req.params` defect already recorded as unbuilt.
+
+4. **Two pairs, two schemas' worth of nothing.** Both pairs use
+   `orders-schema.sql`. The blog schema has not been paired at all, so nothing
+   here separates "property of the model" from "property of this schema".

@@ -1,0 +1,80 @@
+{
+  "seed": {
+    "fixture": "v5-orders.js.txt",
+    "routes": 13,
+    "chars": 5858,
+    "failedLayer": 1,
+    "errorType": "SyntaxError"
+  },
+  "armA": {
+    "arm": "A-with-preamble",
+    "outcome": "verified",
+    "verified": true,
+    "attempts": [
+      {
+        "attempt": 1,
+        "source": "seed",
+        "latencyMs": null,
+        "outputChars": 5858,
+        "routeCount": 13,
+        "verified": false,
+        "failedLayer": 1,
+        "errorType": "SyntaxError",
+        "violationCount": 0,
+        "feedbackSent": true
+      },
+      {
+        "attempt": 2,
+        "source": "generated",
+        "latencyMs": 248800,
+        "outputChars": 7210,
+        "routeCount": 15,
+        "verified": true,
+        "failedLayer": null,
+        "errorType": null,
+        "violationCount": 0,
+        "feedbackSent": false
+      }
+    ],
+    "generations": 1,
+    "emittedChars": 7210,
+    "emittedRoutes": 15,
+    "emittedSha256": "9d7b348baecfebc8636191e6e2264a4d6cae8b21c7d4c4c39b414ffa2245d0ca"
+  },
+  "armB": {
+    "arm": "B-critique-only",
+    "outcome": "verified",
+    "verified": true,
+    "attempts": [
+      {
+        "attempt": 1,
+        "source": "seed",
+        "latencyMs": null,
+        "outputChars": 5858,
+        "routeCount": 13,
+        "verified": false,
+        "failedLayer": 1,
+        "errorType": "SyntaxError",
+        "violationCount": 0,
+        "feedbackSent": true
+      },
+      {
+        "attempt": 2,
+        "source": "generated",
+        "latencyMs": 227444,
+        "outputChars": 7219,
+        "routeCount": 15,
+        "verified": true,
+        "failedLayer": null,
+        "errorType": null,
+        "violationCount": 0,
+        "feedbackSent": false
+      }
+    ],
+    "generations": 1,
+    "emittedChars": 7219,
+    "emittedRoutes": 15,
+    "emittedSha256": "ed1e531d3f13a58356b2f52450e8dd01540cc774090e83625b6650224f304b64"
+  },
+  "armsIdentical": false
+}

@@ -1,0 +1,7 @@
+Layer 1 (syntax): the module you returned does not parse as JavaScript.
+Unexpected token at line 173, column 34:
+
+  173 |     const params = ["$" + (i + 1) for (i in cols)].join(", ");
+      |                                   ^
+
+Return the complete module again, corrected so that it parses as an ES module.
