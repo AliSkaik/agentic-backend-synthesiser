@@ -856,3 +856,189 @@ second.
 4. **Two pairs, two schemas' worth of nothing.** Both pairs use
    `orders-schema.sql`. The blog schema has not been paired at all, so nothing
    here separates "property of the model" from "property of this schema".
+
+## Week 9 — 2026-08-10 — decisions recorded before the experiments they govern
+
+**Done:** no code. This entry fixes four methodology decisions in writing
+*before* the runs and the parser that they constrain exist. The reason for the
+ordering is the one the whole evaluation rests on: a measure chosen after
+seeing output is not a measure, and every one of these four could otherwise be
+settled retrospectively in whichever direction flattered the result.
+
+### The baseline is the same local model, not a premium cloud model
+
+§2.8 as submitted defines the baseline as *"a single call to a premium model"*.
+Changed to **a single monolithic call to `qwen2.5-coder:7b`** same model, same
+`temperature: 0`, same `seed: 42`, same hardware as the pipeline arm.
+
+The research question asks whether a *pipeline* of small local agents plus a
+deterministic verifier outperforms *a single monolithic language model*. That is
+a claim about the harness. A cloud frontier baseline varies model capability and
+harness simultaneously, so whichever arm won, the result could not be attributed
+to either factor and the likely outcome, a frontier model winning, would say
+nothing about the contribution this dissertation makes. Holding the model
+constant leaves the harness as the sole independent variable.
+
+Two costs are accepted deliberately. The comparison sounds weaker: "beats one
+prompt to the same 7B model" is a narrower claim than "beats GPT-class". And it
+says nothing about whether a frontier model would have been a better engineering
+choice, which is a real question this design cannot answer. The narrow claim is
+taken because it is the one that survives examination. The alternative also
+breaks the zero-token-cost argument §2.7.1 already makes and would need that
+section rewritten.
+
+**The submitted §2.8 was already internally inconsistent on this point**, which
+is the strongest evidence that the premium baseline was a leftover rather than a
+considered design. The same paragraph states that "for each trial, telemetry is
+collected natively from the Ollama runtime". Ollama cannot report token counts
+for a call it did not serve, so under a cloud baseline metric 5 (token
+consumption, both arms) is unmeasurable without a second telemetry path that was
+never specified. Option A does not merely avoid a confound; it repairs a
+contradiction that was already in the chapter.
+
+§2.7.1 needs no rewrite under this choice. Its cost and privacy arguments concern
+deployment economics, cite DIN-SQL rather than this project's own results, and
+are unaffected by what the baseline arm runs. What it gains is that its third
+bullet, that 7B models are more error-prone *when prompted monolithically*,
+stops being an assertion and becomes the hypothesis the baseline arm tests.
+
+### Ten trials, scoped to latency, because output is invariant by configuration
+
+§2.8 as submitted promises ten independent trials per scenario reporting
+variance and standard deviation. Under greedy decoding with a fixed seed that
+promise is empty: two prior observations in this logbook establish
+byte-identical output across runs Week 7 limitation 3 (`diff` exit 0 on two
+fresh runs) and *"Determinism now established across processes, not assumed"*
+(2026-08-04). Ten trials would report a standard deviation of exactly zero on
+every output metric, measuring the decoding configuration rather than the
+system.
+
+§2.8 is therefore restated: generation is deterministic by configuration, so
+output metrics are invariant across repetitions and are reported from a single
+run; **latency** is reported as a mean and standard deviation across **ten
+repetitions of a defined representative subset**.
+
+The subset is defined here rather than at run time, so that it cannot be chosen
+after the timings are seen: **Scenario B** both feature-description fixtures,
+blog and orders. **Scenario A** the first ten instances of the WP2 Spider
+subset by index.
+
+This is a narrowing of what is measured, not of rigour the discarded
+repetitions were uninformative, and the finding that licenses discarding them is
+the project's own. It is written here in that order so the claim is auditable.
+
+### The published grammar in §2.5.1 accepts none of the real fixtures
+
+Established by reading, before writing any parser. The EBNF printed in §2.5.1
+admits only `PRIMARY KEY` and a `FOREIGN KEY REFERENCES <table> (<col>)`
+constraint on a bare `<col_name> <data_type>` column. Against the two DDL
+fixtures Agent 1 actually produced:
+
+| construct | in published grammar | in `blog-schema.sql` | in `orders-schema.sql` |
+| ---------------------------- | --- | --- | --- |
+| `SERIAL`                     | no  | yes | yes |
+| `NOT NULL`                   | no  | yes | yes |
+| `UNIQUE`                     | no  | yes | yes |
+| `DEFAULT <expr>`             | no  | yes | yes |
+| `CREATE TYPE … AS ENUM`      | no  | yes | yes |
+| `CHECK (…)`                  | no  | no  | yes |
+| `NUMERIC(10, 2)`             | no  | no  | yes |
+| inline `REFERENCES t(c)`     | no  | no  | yes |
+| table-level `FOREIGN KEY (c) REFERENCES t(c)` | no see below | yes | no |
+
+Acceptance rate of the grammar as published: **0 of 2**. Separately, its FK
+production is `"FOREIGN KEY REFERENCES" <table_name> "(" <col_name> ")"`, which
+is not valid PostgreSQL in any form the constraint requires the local column
+list, `FOREIGN KEY (author_id) REFERENCES users(id)`. So the published rules do
+not merely under-cover the observed output; one of them describes a construct
+the database would reject.
+
+**Decision:** Layer 0 implements an **extended** grammar covering the constructs
+Agent 1 emits, and §2.5.1 prints the extended rules with a statement that the
+grammar was extended during implementation to match observed output. The
+acceptance rate of the originally published subset is reported **separately, as
+the 0/2 figure above**, so the coverage gap is on the record rather than
+quietly repaired.
+
+The alternative implement exactly what was printed and report the gap as a
+limitation was rejected on a functional ground, not a presentational one. A
+Layer 0 that rejects every real run cannot serve as a gate; it would route every
+generation into an Agent 1 repair loop that has nothing to repair. What is not
+defensible under either option is implementing a grammar different from the one
+the thesis prints, and this entry exists so that cannot happen silently.
+
+### Layer 0 runs before the Agent 2 loop, not inside `verify()`
+
+The DDL is fixed for the whole duration of the Agent 2 loop
+(`src/reflect.js` loops on `ddl` unchanged), so checking it inside
+`verify(code, ddl)` would re-run an identical check on every attempt and would
+leave `reflect()` to work out which agent a failure belongs to.
+
+Layer 0 therefore runs once on the DDL, in its own bounded Agent 1 repair loop,
+before the Agent 2 loop is entered. `src/verify.js` keeps its present meaning
+judge this module against this DDL and the two reflection paths stay
+structurally distinct: **Layer 0 → Agent 1**, **Layers 1 and 2 → Agent 2**. That
+distinction is what §2.6.1 and §3.6 have to describe, and it is easier to
+describe when the code has the same shape as the description.
+
+This is an addition to the loop architecture, not a rewrite of it. §2.6 as
+submitted describes a single loop over Agent 2 and does not survive unamended.
+
+### The corrections actually applied to Chapters I and II
+
+The model referenced throughout the submitted chapters was `8B`; the model every
+run in this logbook used is `qwen2.5-coder:7b`. **18 search hits, all replaced.**
+One of the 18 is the auto-generated table of contents mirroring the §2.7.1
+heading, so 17 distinct passages were touched.
+
+Two defects in §2.8 were repaired in the same pass. The metric list was numbered
+4 to 8 and is now 1 to 5. Metric 4 was corrupted in the submitted file, reading
+"wall-clock duration from text ingestion to archive serialis database's
+shipsation, in milliseconds"; it now states wall-clock elapsed time from
+ingestion of the natural-language input to serialisation of the output archive.
+
+The metric-4 wording describes a measurement the artefact cannot yet take. The
+archive is produced by the WP4 web layer, which does not exist, and `reflect()`
+currently times each generation rather than the run. **The instrumentation must
+be built to match this definition, or the reported figure will not be the figure
+§2.8 defines.** Recorded here because that mismatch would otherwise surface in
+Chapter IV, too late to fix.
+
+The chapter file lives in OneDrive and is saved as a new version; the submitted
+`v2` is not renamed or overwritten.
+
+### Technical limitations
+
+1. **A same-model baseline cannot answer the question a reader will actually
+   ask.** "Would a frontier model have done this in one call?" is the practical
+   question, and this design is silent on it by construction.
+   - _Cause:_ the choice to isolate the harness by holding the model constant.
+   - _Residual risk:_ an examiner may read the narrow comparison as evasion. The
+     defence is the confound argument above, and it has to be made explicitly in
+     Chapter IV rather than left for them to reconstruct.
+
+2. **The representative subset is defined but not yet justified as
+   representative.** "Both fixtures" and "first ten by index" are reproducible
+   selection rules, which is what the pre-registration requires; neither is an
+   argument that those instances resemble the rest.
+   - _Consequence:_ latency variance is reported for a *stated* subset, and must
+     be described that way rather than as the variance of the system.
+
+3. **Determinism is a property of this configuration, not a guarantee.** Carried
+   forward from Week 7 limitation 3: byte-identical output holds for this model
+   tag, this Ollama version, this hardware. Every result that rests on
+   single-run reporting inherits that dependency.
+   - _Mitigation:_ pin the model tag before any figure is treated as fixed.
+
+4. **The 0/2 acceptance figure is computed against two fixtures.** It is a
+   statement about the two DDL scripts in `tests/fixtures/`, not an estimate of
+   how often the published grammar would reject Agent 1 output in general. The
+   WP2 Spider run will produce a hundred more DDL scripts and is the first
+   opportunity to replace this figure with one that means something.
+
+5. **The sweep count is a search result, not an audit.** 18 hits is what the
+   document's own search reported; nothing independently confirms that every
+   hit was a model-size reference or that no variant spelling was missed.
+   - _Residual risk:_ a stray "8-billion" written out in words would not appear
+     in a search for `8B`. Cheap to re-check before submission, and worth doing
+     once rather than trusting this figure twice.
