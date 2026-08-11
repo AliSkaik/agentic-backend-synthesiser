@@ -1,0 +1,8 @@
+Layer 0 (grammar): the schema you returned is not well-formed DDL.
+Expected ENUM after AS at line 1, column 24:
+
+  1 | CREATE TYPE tag_name AS VARCHAR(255);
+    |                         ^
+
+Return the complete schema again, corrected. Emit only CREATE statements:
+no prose, no explanation, no markdown fences.

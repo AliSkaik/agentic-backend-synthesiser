@@ -1,0 +1,8 @@
+Layer 0 (grammar): the schema you returned is not well-formed DDL.
+Expected ENUM after AS at line 1, column 31:
+
+  1 | CREATE TYPE timezone_offset AS (
+    |                                ^
+
+Return the complete schema again, corrected. Emit only CREATE statements:
+no prose, no explanation, no markdown fences.

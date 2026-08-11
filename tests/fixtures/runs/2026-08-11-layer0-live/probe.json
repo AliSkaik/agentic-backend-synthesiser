@@ -1,0 +1,160 @@
+{
+  "model": "qwen2.5-coder:7b",
+  "temperature": 0,
+  "seed": 42,
+  "ranAt": "2026-08-11T06:20:54.954Z",
+  "results": [
+    {
+      "id": "c1-blog",
+      "kind": "control",
+      "description": "A blog with users, posts and tags. Posts belong to a user and can have many tags.",
+      "latencyMs": 47748,
+      "error": null,
+      "chars": 653,
+      "extended": {
+        "passed": false,
+        "type": "UnexpectedToken",
+        "line": 1,
+        "message": "Expected ENUM after AS"
+      },
+      "published": {
+        "passed": false,
+        "type": "UnexpectedToken",
+        "line": 1,
+        "message": "Expected TABLE after CREATE, found \"TYPE\""
+      }
+    },
+    {
+      "id": "c2-orders",
+      "kind": "control",
+      "description": "An online shop with customers, orders and the line items on each order.",
+      "latencyMs": 28923,
+      "error": null,
+      "chars": 837,
+      "extended": {
+        "passed": true,
+        "tables": 3
+      },
+      "published": {
+        "passed": false,
+        "type": "UnexpectedToken",
+        "line": 1,
+        "message": "Expected TABLE after CREATE, found \"TYPE\""
+      }
+    },
+    {
+      "id": "c3-users",
+      "kind": "control",
+      "description": "Create a PostgreSQL table for users with id, email and created_at columns",
+      "latencyMs": 5431,
+      "error": null,
+      "chars": 141,
+      "extended": {
+        "passed": true,
+        "tables": 1
+      },
+      "published": {
+        "passed": false,
+        "type": "UnclosedParenthesis",
+        "line": 1,
+        "message": "Unclosed parenthesis"
+      }
+    },
+    {
+      "id": "p1-money",
+      "kind": "probe",
+      "description": "A double-entry accounting ledger. Store monetary amounts to exact cent precision, with accounts, journal entries and postings.",
+      "latencyMs": 19295,
+      "error": null,
+      "chars": 578,
+      "extended": {
+        "passed": false,
+        "type": "UnexpectedToken",
+        "line": 9,
+        "message": "Unexpected character \":\""
+      },
+      "published": {
+        "passed": false,
+        "type": "UnexpectedToken",
+        "line": 9,
+        "message": "Unexpected character \":\""
+      }
+    },
+    {
+      "id": "p2-timezone",
+      "kind": "probe",
+      "description": "A conference scheduling system for events run across multiple time zones. Store each session's start and end instants with their time zone offset preserved.",
+      "latencyMs": 11300,
+      "error": null,
+      "chars": 326,
+      "extended": {
+        "passed": false,
+        "type": "UnexpectedToken",
+        "line": 1,
+        "message": "Expected ENUM after AS"
+      },
+      "published": {
+        "passed": false,
+        "type": "UnexpectedToken",
+        "line": 1,
+        "message": "Expected TABLE after CREATE, found \"TYPE\""
+      }
+    },
+    {
+      "id": "p3-arrays",
+      "kind": "probe",
+      "description": "A document library where each document carries a list of keyword tags in a single column, and supports full-text search over its body.",
+      "latencyMs": 10304,
+      "error": null,
+      "chars": 299,
+      "extended": {
+        "passed": false,
+        "type": "UnexpectedToken",
+        "line": 5,
+        "message": "Unexpected character \"[\""
+      },
+      "published": {
+        "passed": false,
+        "type": "UnexpectedToken",
+        "line": 5,
+        "message": "Unexpected character \"[\""
+      }
+    },
+    {
+      "id": "p4-floats",
+      "kind": "probe",
+      "description": "An IoT platform storing sensor readings as high-precision floating point measurements, with devices and reading batches.",
+      "latencyMs": 18575,
+      "error": null,
+      "chars": 585,
+      "extended": {
+        "passed": true,
+        "tables": 3
+      },
+      "published": {
+        "passed": false,
+        "type": "UnexpectedToken",
+        "line": 1,
+        "message": "Expected TABLE after CREATE, found \"TYPE\""
+      }
+    },
+    {
+      "id": "p5-uuid-json",
+      "kind": "probe",
+      "description": "A product inventory keyed by universally unique identifiers, where each product stores a flexible bag of attributes as structured JSON.",
+      "latencyMs": 5547,
+      "error": null,
+      "chars": 139,
+      "extended": {
+        "passed": true,
+        "tables": 1
+      },
+      "published": {
+        "passed": false,
+        "type": "UnclosedParenthesis",
+        "line": 1,
+        "message": "Unclosed parenthesis"
+      }
+    }
+  ]
+}
