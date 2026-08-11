@@ -165,5 +165,100 @@ for (const [name, ddl] of [["blog", blog], ["orders", orders]]) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Constructs added after the 2026-08-11 live probe measured a 37.5% false
+// failure rate. Each of these is valid PostgreSQL that the first build rejected.
+// ---------------------------------------------------------------------------
+
+const nowAccepted = [
+  ["composite CREATE TYPE", "CREATE TYPE currency AS (\n    amount NUMERIC(19, 4),\n    code CHAR(3)\n);"],
+  ["CREATE DOMAIN", "CREATE DOMAIN tag_name AS VARCHAR(255) NOT NULL;"],
+  ["array column", "CREATE TABLE d (\n    id SERIAL PRIMARY KEY,\n    keywords TEXT[] NOT NULL\n);"],
+  ["sized array column", "CREATE TABLE d (\n    id INT,\n    codes VARCHAR(50)[]\n);"],
+  ["TIMESTAMP WITH TIME ZONE", "CREATE TABLE s (\n    id INT,\n    starts_at TIMESTAMP WITH TIME ZONE NOT NULL\n);"],
+  ["TIMESTAMP WITHOUT TIME ZONE", "CREATE TABLE s (\n    id INT,\n    starts_at TIMESTAMP WITHOUT TIME ZONE\n);"],
+  ["DOUBLE PRECISION", "CREATE TABLE r (\n    id INT,\n    reading DOUBLE PRECISION NOT NULL\n);"],
+  ["CHARACTER VARYING", "CREATE TABLE r (\n    id INT,\n    name CHARACTER VARYING(50)\n);"],
+  ["cast in DEFAULT", "CREATE TABLE a (\n    id INT,\n    balance NUMERIC DEFAULT 0::NUMERIC\n);"],
+  ["row-constructor DEFAULT", "CREATE TABLE a (\n    id INT,\n    money currency DEFAULT (0::NUMERIC, 'USD'::CHAR(3))\n);"],
+  ["CREATE INDEX", "CREATE TABLE d (\n    id INT,\n    body TEXT\n);\nCREATE INDEX idx_body ON d USING GIN (to_tsvector('english', body));"],
+  ["CREATE UNIQUE INDEX", "CREATE TABLE d (\n    id INT\n);\nCREATE UNIQUE INDEX idx_id ON d (id);"],
+];
+
+for (const [name, ddl] of nowAccepted) {
+  const result = verifyGrammar(ddl, { grammar: "extended" });
+  check(
+    `extended accepts ${name}`,
+    result.passed === true,
+    result.passed ? "" : `${result.error.type}: ${result.error.message} (line ${result.error.line})`
+  );
+  const strict = verifyGrammar(ddl, { grammar: "published" });
+  check(`published still rejects ${name}`, strict.passed === false);
+}
+
+// The gate must not be widened into uselessness. These stay rejected.
+const stillRejected = [
+  ["CREATE TYPE over a base type is not valid PostgreSQL", "CREATE TYPE tag_name AS VARCHAR(255);"],
+  ["malformed CREATE INDEX", "CREATE TABLE d (\n    id INT\n);\nCREATE INDEX idx_id ON d (id;"],
+  ["array suffix left open", "CREATE TABLE d (\n    id INT,\n    k TEXT[\n);"],
+];
+
+for (const [name, ddl] of stillRejected) {
+  const result = verifyGrammar(ddl, { grammar: "extended" });
+  check(
+    `extended still rejects: ${name}`,
+    result.passed === false,
+    result.passed ? "WRONGLY ACCEPTED" : `${result.error.type} line ${result.error.line}`
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Regression against the committed live probe
+// ---------------------------------------------------------------------------
+//
+// tests/fixtures/runs/2026-08-11-layer0-live/ is the "before" measurement,
+// committed unchanged in 7a3a2a0. Re-checking those exact bytes is what lets the
+// rate movement be stated causally: same eight generated schemas, one variable
+// moved.
+
+const probeDir = join(here, "fixtures", "runs", "2026-08-11-layer0-live", "generated");
+const probe = (id) => readFileSync(join(probeDir, `${id}.sql`), "utf8");
+
+// The one true positive. Agent 1 emitted this on a plain blog description and no
+// other layer could have caught it: Layer 2 reads columns, not type
+// declarations, and Layer 1 never sees the DDL. If the extension ever makes this
+// pass, the extension went too far.
+check(
+  "c1-blog stays rejected — CREATE TYPE ... AS VARCHAR(255) does not execute",
+  verifyGrammar(probe("c1-blog"), { grammar: "extended" }).passed === false,
+  "the true positive from the live probe"
+);
+
+for (const id of ["p1-money", "p2-timezone", "p3-arrays"]) {
+  const result = verifyGrammar(probe(id), { grammar: "extended" });
+  check(
+    `${id} was a false failure and is now accepted`,
+    result.passed === true,
+    result.passed ? "" : `${result.error.type}: ${result.error.message} (line ${result.error.line})`
+  );
+}
+
+for (const id of ["c2-orders", "c3-users", "p4-floats", "p5-uuid-json"]) {
+  check(
+    `${id} still accepted`,
+    verifyGrammar(probe(id), { grammar: "extended" }).passed === true
+  );
+}
+
+// The comparative figure has to stay comparable: extending the accepted set
+// must not move the published grammar's verdict on any of the eight.
+const probeIds = ["c1-blog", "c2-orders", "c3-users", "p1-money", "p2-timezone", "p3-arrays", "p4-floats", "p5-uuid-json"];
+const publishedAccepted = probeIds.filter((id) => verifyGrammar(probe(id), { grammar: "published" }).passed);
+check(
+  "published grammar still accepts 0 of the 8 live schemas",
+  publishedAccepted.length === 0,
+  publishedAccepted.length ? `accepted ${publishedAccepted}` : "0/8, unchanged"
+);
+
 console.log(`\n${failures === 0 ? "all" : failures + " failed of"} assertions\n`);
 process.exit(failures === 0 ? 0 : 1);

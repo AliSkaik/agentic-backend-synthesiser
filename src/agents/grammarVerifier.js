@@ -21,12 +21,24 @@ const LAYER = 0;
 // Tokeniser
 // ---------------------------------------------------------------------------
 
-const PUNCTUATION = new Set(["(", ")", ",", ";"]);
+// "[" and "]" carry the array suffix, `TEXT[]`. They are punctuation rather
+// than operators so the array parser can match them exactly.
+// "." carries qualified names and composite field access, `amount.amount`.
+// Checked before the number branch, but a number starting with a digit consumes
+// its own decimal point, so `NUMERIC(19, 4)` is unaffected.
+//
+// Tokenising "." is deliberately NOT the same as parsing qualified names. A
+// schema-qualified `REFERENCES public.accounts(id)` still fails, because Layer 2
+// reads an unqualified table name out of the same DDL and the two readers must
+// agree; teaching only one of them about qualification would break the
+// agreement that tests/layer0.test.js asserts. Recorded as a limitation.
+const PUNCTUATION = new Set(["(", ")", ",", ";", "[", "]", "."]);
 
-// Comparison and arithmetic characters. They occur only inside CHECK
-// expressions, which the extended grammar accepts as a balanced token run
-// rather than parsing as an expression see parseBalanced.
-const OPERATOR = new Set(["<", ">", "=", "!", "+", "-", "*", "/", "%", "|"]);
+// Comparison and arithmetic characters, plus ":" for the `0::NUMERIC` cast.
+// Runs of them merge into one token, so "::" arrives whole. They occur inside
+// CHECK expressions and cast suffixes, neither of which is parsed as an
+// expression see parseBalanced.
+const OPERATOR = new Set(["<", ">", "=", "!", "+", "-", "*", "/", "%", "|", ":"]);
 
 /**
  * Produces {type, value, line, column} tokens. Column is 0-based to match the
@@ -275,13 +287,105 @@ function parseScript(parser) {
     // fixtures open with. The published grammar has no production for it, so
     // under `published` this falls through to parseCreateTable and fails there
     // which is the correct verdict, not a gap in this function.
-    const error =
-      parser.extended && parser.isWord("CREATE") && parser.isWord("TYPE", 1)
-        ? parseCreateType(parser)
-        : parseCreateTable(parser);
+    const error = parser.extended ? parseStatement(parser) : parseCreateTable(parser);
     if (error) return error;
   }
   return null;
+}
+
+// EXTENDED ONLY. Dispatch on the statement kind. The published grammar has one
+// production, <create_table_stmt>, so under `published` everything here falls
+// through to parseCreateTable and fails there which is the correct verdict,
+// not a gap in this function.
+function parseStatement(parser) {
+  if (parser.isWord("CREATE")) {
+    if (parser.isWord("TYPE", 1)) return parseCreateType(parser);
+    if (parser.isWord("DOMAIN", 1)) return parseCreateDomain(parser);
+    if (parser.isWord("INDEX", 1)) return parseCreateIndex(parser);
+    if (parser.isWord("UNIQUE", 1) && parser.isWord("INDEX", 2)) return parseCreateIndex(parser);
+  }
+  return parseCreateTable(parser);
+}
+
+// EXTENDED ONLY.
+// <create_domain_stmt> ::= "CREATE DOMAIN" <name> "AS" <data_type> { <constraint> } ";"
+//
+// Included because it is the construct Agent 1 was reaching for when it emitted
+// `CREATE TYPE tag_name AS VARCHAR(255)` in the 2026-08-11 probe. Accepting the
+// correct spelling is not the same as accepting the incorrect one, and
+// parseCreateType below still rejects that.
+function parseCreateDomain(parser) {
+  parser.next(); // CREATE
+  parser.next(); // DOMAIN
+
+  if (parser.peek().type !== "identifier") {
+    return parser.fail("UnexpectedToken", "Expected a domain name after CREATE DOMAIN");
+  }
+  parser.next();
+
+  if (!parser.isWord("AS")) {
+    return parser.fail("UnexpectedToken", "Expected AS after the domain name");
+  }
+  parser.next();
+
+  let error = parseDataType(parser);
+  if (error) return error;
+
+  error = parseExtendedConstraints(parser);
+  if (error) return error;
+
+  return parser.expectPunctuation(";", "Expected ; after the CREATE DOMAIN statement");
+}
+
+// EXTENDED ONLY.
+// <create_index_stmt> ::= "CREATE" [ "UNIQUE" ] "INDEX" [ <name> ] "ON" <table_name>
+//                         [ "USING" <method> ] "(" <expr_list> ")" ";"
+//
+// DECISION: indexes are PARSED, not skipped to the next semicolon.
+//
+//   Skipping is one line and would accept `CREATE INDEX idx ON d (id;` a
+//   malformed statement passing the gate. That is a false pass, which is the
+//   failure class this whole agent exists to prevent, and it would be reached
+//   by the cheaper implementation rather than by any considered trade-off.
+//   Parsing costs a dozen lines and keeps `passed: true` meaning what it says.
+//   Recorded in the logbook alongside the coverage table.
+function parseCreateIndex(parser) {
+  parser.next(); // CREATE
+  if (parser.isWord("UNIQUE")) parser.next();
+  parser.next(); // INDEX
+
+  if (parser.isWord("CONCURRENTLY")) parser.next();
+
+  // The index name is optional: PostgreSQL will generate one.
+  if (parser.peek().type === "identifier" && !parser.isWord("ON")) parser.next();
+
+  if (!parser.isWord("ON")) {
+    return parser.fail("UnexpectedToken", "Expected ON after the index name");
+  }
+  parser.next();
+
+  if (parser.peek().type !== "identifier") {
+    return parser.fail("UnexpectedToken", "Expected a table name after ON");
+  }
+  parser.next();
+
+  if (parser.isWord("USING")) {
+    parser.next();
+    if (parser.peek().type !== "identifier") {
+      return parser.fail("UnexpectedToken", "Expected an index method after USING");
+    }
+    parser.next();
+  }
+
+  const error = parseBalanced(parser, "Expected ( listing the indexed columns");
+  if (error) return error;
+
+  // A partial index: WHERE follows the column list.
+  if (parser.isWord("WHERE")) {
+    while (!parser.isPunctuation(";") && !parser.atEof()) parser.next();
+  }
+
+  return parser.expectPunctuation(";", "Expected ; after the CREATE INDEX statement");
 }
 
 // EXTENDED ONLY.
@@ -300,30 +404,52 @@ function parseCreateType(parser) {
   }
   parser.next();
 
-  if (!parser.isWord("ENUM")) {
-    return parser.fail("UnexpectedToken", "Expected ENUM after AS");
-  }
-  parser.next();
-
-  let error = parser.expectPunctuation("(", "Expected ( after ENUM");
-  if (error) return error;
-
-  for (;;) {
-    if (parser.peek().type !== "string") {
-      return parser.fail("UnexpectedToken", "Expected a quoted enum label");
-    }
+  // PostgreSQL's CREATE TYPE has exactly three parenthesised forms: ENUM,
+  // RANGE, and a composite. There is NO `AS <basetype>` form — that spelling is
+  // CREATE DOMAIN, and accepting it here would have thrown away the one true
+  // positive the 2026-08-11 live probe produced. The check below is therefore
+  // deliberately a whitelist, not a fallthrough.
+  if (parser.isWord("ENUM")) {
     parser.next();
-    if (parser.isPunctuation(",")) {
+    let error = parser.expectPunctuation("(", "Expected ( after ENUM");
+    if (error) return error;
+
+    for (;;) {
+      if (parser.peek().type !== "string") {
+        return parser.fail("UnexpectedToken", "Expected a quoted enum label");
+      }
       parser.next();
-      continue;
+      if (parser.isPunctuation(",")) {
+        parser.next();
+        continue;
+      }
+      break;
     }
-    break;
+
+    error = parser.expectPunctuation(")", "Expected ) to close the enum labels");
+    if (error) return error;
+    return parser.expectPunctuation(";", "Expected ; after the CREATE TYPE statement");
   }
 
-  error = parser.expectPunctuation(")", "Expected ) to close the enum labels");
-  if (error) return error;
+  if (parser.isWord("RANGE")) {
+    parser.next();
+    const error = parseBalanced(parser, "Expected ( after RANGE");
+    if (error) return error;
+    return parser.expectPunctuation(";", "Expected ; after the CREATE TYPE statement");
+  }
 
-  return parser.expectPunctuation(";", "Expected ; after the CREATE TYPE statement");
+  // Composite: CREATE TYPE currency AS (amount NUMERIC(19,4), code CHAR(3));
+  if (parser.isPunctuation("(")) {
+    const error = parseBalanced(parser, "Expected ( to open the composite fields");
+    if (error) return error;
+    return parser.expectPunctuation(";", "Expected ; after the CREATE TYPE statement");
+  }
+
+  return parser.fail(
+    "UnexpectedToken",
+    `Expected ENUM, RANGE, or ( after AS, found "${parser.peek().value ?? "end of input"}". ` +
+      "A type over an existing base type is CREATE DOMAIN, not CREATE TYPE"
+  );
 }
 
 // <create_table_stmt> ::= "CREATE TABLE" <table_name> "(" <column_list> ");"
@@ -514,28 +640,92 @@ function parseDataType(parser) {
   }
   parser.next();
 
-  if (!parser.isPunctuation("(")) return null;
-
-  let error = parser.expectPunctuation("(", "Expected ( in the type argument");
-  if (error) return error;
-
-  if (parser.peek().type !== "number") {
-    return parser.fail("MalformedDataType", "Expected a number in the type argument");
+  // EXTENDED ONLY. PostgreSQL spells several types as more than one word.
+  // Consumed before the size argument, because CHARACTER VARYING(50) puts the
+  // continuation word first.
+  if (parser.extended) {
+    if (parser.isWord("PRECISION") || parser.isWord("VARYING")) {
+      parser.next();
+    } else if (
+      (parser.isWord("WITH") || parser.isWord("WITHOUT")) &&
+      parser.isWord("TIME", 1) &&
+      parser.isWord("ZONE", 2)
+    ) {
+      parser.next();
+      parser.next();
+      parser.next();
+    }
   }
-  parser.next();
 
-  if (parser.isPunctuation(",")) {
-    parser.next();
+  if (parser.isPunctuation("(")) {
+    let error = parser.expectPunctuation("(", "Expected ( in the type argument");
+    if (error) return error;
+
     if (parser.peek().type !== "number") {
-      return parser.fail("MalformedDataType", "Expected a number after , in the type argument");
+      return parser.fail("MalformedDataType", "Expected a number in the type argument");
     }
     parser.next();
+
+    if (parser.isPunctuation(",")) {
+      parser.next();
+      if (parser.peek().type !== "number") {
+        return parser.fail("MalformedDataType", "Expected a number after , in the type argument");
+      }
+      parser.next();
+    }
+
+    if (!parser.isPunctuation(")")) {
+      return parser.fail("MalformedDataType", "Expected ) to close the type argument");
+    }
+    error = parser.expectPunctuation(")", "Expected ) to close the type argument");
+    if (error) return error;
   }
 
-  if (!parser.isPunctuation(")")) {
-    return parser.fail("MalformedDataType", "Expected ) to close the type argument");
+  // EXTENDED ONLY. Array suffixes: TEXT[], VARCHAR(50)[], INT[][].
+  if (parser.extended) {
+    while (parser.isPunctuation("[")) {
+      parser.next();
+      if (!parser.isPunctuation("]")) {
+        return parser.fail("MalformedDataType", "Expected ] to close the array suffix");
+      }
+      parser.next();
+    }
   }
-  return parser.expectPunctuation(")", "Expected ) to close the type argument");
+
+  return null;
+}
+
+// EXTENDED ONLY. A value in a DEFAULT clause: a literal, a function call, a
+// row constructor, each optionally followed by one or more `::type` casts.
+// Not an expression grammar the thesis publishes no expression production,
+// so anything parenthesised is checked for balance and nothing more.
+function parseValueExpression(parser) {
+  if (parser.isPunctuation("(")) {
+    const error = parseBalanced(parser, "Expected ( in the DEFAULT expression");
+    if (error) return error;
+  } else {
+    const token = parser.peek();
+    if (token.type !== "identifier" && token.type !== "string" && token.type !== "number") {
+      return parser.fail("UnexpectedToken", "Expected a value after DEFAULT");
+    }
+    parser.next();
+    if (parser.isPunctuation("(")) {
+      const error = parseBalanced(parser, "Expected ( in the DEFAULT expression");
+      if (error) return error;
+    }
+  }
+
+  return parseCasts(parser);
+}
+
+// `0::NUMERIC`, `'USD'::CHAR(3)`, and chains of them.
+function parseCasts(parser) {
+  while (parser.peek().type === "operator" && parser.peek().value === "::") {
+    parser.next();
+    const error = parseDataType(parser);
+    if (error) return error;
+  }
+  return null;
 }
 
 // <constraint> ::= "PRIMARY KEY"
@@ -609,16 +799,8 @@ function parseExtendedConstraints(parser) {
 
     if (parser.isWord("DEFAULT")) {
       parser.next();
-      const token = parser.peek();
-      if (token.type !== "identifier" && token.type !== "string" && token.type !== "number") {
-        return parser.fail("UnexpectedToken", "Expected a value after DEFAULT");
-      }
-      parser.next();
-      // A function-call default: `DEFAULT now()`.
-      if (parser.isPunctuation("(")) {
-        const error = parseBalanced(parser, "Expected ( in the DEFAULT expression");
-        if (error) return error;
-      }
+      const error = parseValueExpression(parser);
+      if (error) return error;
       continue;
     }
 
