@@ -1177,3 +1177,135 @@ builder.
      taxonomy matters to a later result — and it does, since WP2 records the
      Layer 0 error type per instance — they should be re-derived by breaking the
      parser deliberately and confirming each test fails.
+
+## Week 9 — 2026-08-11 — Layer 0 meets the live model, and fails 37.5% of it
+
+**Done:** a paired live probe either side of a grammar extension. Artefacts in
+`tests/fixtures/runs/2026-08-11-layer0-live/` (before, committed unchanged
+before the parser was touched) and `.../2026-08-11-layer0-live-after/`.
+
+Eight descriptions: three controls in the domains the Week 8 fixtures came from,
+five probes written to invite PostgreSQL types the extended grammar did not
+cover. The probes were deliberately not written to produce *bad* SQL. They were
+written to produce *good* SQL the parser might reject, because the previous
+entry's limitation 3 stated the parser errs toward false failures and that the
+rate was unknown.
+
+| | before | after |
+| --- | --- | --- |
+| extended grammar accepted | 4 / 8 | **7 / 8** |
+| false failures | **3 / 8 (37.5%)** | **0 / 8** |
+| true positives | 1 | 1 |
+| published grammar accepted | 0 / 8 | 0 / 8 |
+
+### The question was reframed before the run, and that was the whole value
+
+The plan was to test whether Agent 1 can act on a Layer 0 critique. Reading the
+code first changed the question: on the existing fixtures Agent 1 already passes,
+so the more likely live failure was never Agent 1 producing bad DDL — it was
+Agent 1 producing good DDL this parser rejects. **How often the critique is
+wrong matters more than whether the model can act on it**, and it had to be
+measured before WP2 rather than after.
+
+### Why 37.5% was disqualifying rather than merely imprecise
+
+WP2 records the Layer 0 verdict across 100 Spider schemas and, if Layer 0 gates,
+routes failures into an Agent 1 repair loop. At that rate roughly a third of
+instances would be re-prompted to correct SQL that was already correct. The
+resulting **mean-iterations-to-convergence** figure is metric 3 of §2.8 and is
+evidence for the research question in Chapter IV: it would have measured this
+parser's coverage gaps while being reported as the model's ability to repair
+itself. That is a measurement of the wrong thing, not a noisy measurement of the
+right one.
+
+### The true positive justifies the layer on its own
+
+On `c1-blog` — a **control**, a plain blog description, no adversarial
+prompting — Agent 1 emitted:
+
+```sql
+CREATE TYPE tag_name AS VARCHAR(255);
+```
+
+PostgreSQL has no `CREATE TYPE <name> AS <basetype>` form. The parenthesised
+variants are composite, `ENUM` and `RANGE`; a type over an existing base type is
+`CREATE DOMAIN`. This statement does not execute.
+
+**No other layer could have caught it.** Layer 2 reads column names out of
+`CREATE TABLE` bodies and never inspects a type declaration; Layer 1 never sees
+the DDL at all. Without Layer 0 this schema reaches Agent 2, which writes routes
+against a column whose type does not exist, and the failure surfaces at runtime
+against a real database — which is precisely the class of defect this project
+claims a deterministic verifier removes. Found on an unprompted control rather
+than a hand-picked fixture.
+
+It also survived the extension by design. The forms accepted after `AS` are an
+explicit whitelist; a fallthrough would have been one line shorter and would have
+thrown the finding away.
+
+### The critique improved, and that is a separate result
+
+```
+- Expected ENUM after AS at line 1, column 24:
++ Expected ENUM, RANGE, or ( after AS, found "VARCHAR". A type over an existing
++ base type is CREATE DOMAIN, not CREATE TYPE at line 1, column 24:
+```
+
+The first names what the parser wanted; the second names what the model did
+wrong and what the right construct is. Only the second is actionable. Whether
+Agent 1 acts on it is still untested — the original question, still open, now
+resting on a critique worth testing.
+
+### Design decision: indexes are parsed, not skipped
+
+`CREATE INDEX` could have been skipped to the next semicolon in one line.
+Skipping would accept `CREATE INDEX idx ON d (id;` — a malformed statement
+passing the gate, which is the false-pass class this agent exists to prevent,
+reached by the cheaper implementation rather than by any trade-off. It is parsed
+structurally instead, and `tests/layer0.test.js` asserts the malformed form still
+fails.
+
+### Determinism, on eight descriptions instead of two
+
+All eight generated schemas are **byte-identical** between the two runs, in
+separate processes. Prior evidence rested on two fixtures; this extends it to
+eight domains and is what §2.8's single-run reporting of output metrics now
+stands on. Latency was not identical — the cold-start case moved 47 748 → 38 687
+ms, the rest by under 2% — the same independence of timing and decoding recorded
+in Week 7, observed in the opposite direction.
+
+### Technical limitations
+
+1. **Zero false failures on eight descriptions is not a false-failure rate.**
+   The extension was written against the three failures this sample produced, so
+   the sample cannot also validate it. 0/8 here means "the known gaps are
+   closed", not "no gaps remain".
+   - _Mitigation:_ WP2's 100 Spider schemas are the first independent sample.
+     The Layer 0 verdict must be recorded there under both grammars, and the
+     false-failure rate re-derived by reading the rejections rather than assumed
+     from this number.
+
+2. **Schema-qualified names still fail.** `REFERENCES public.accounts(id)` is
+   rejected. The `.` is tokenised, but qualified names are not parsed, and this
+   is deliberate: Layer 2 reads an unqualified table name out of the same DDL,
+   so teaching only Layer 0 about qualification would break the cross-reader
+   agreement that is asserted as a correctness requirement. Closing it means
+   changing both readers together.
+
+3. **Parenthesised constructs are checked for balance, not meaning.** Composite
+   type bodies, `CHECK` expressions, index column lists and row-constructor
+   defaults are all consumed as balanced token runs. `CHECK (amount.amount >>> 0)`
+   passes. Layer 0 asserts well-formedness, and the thesis publishes no
+   expression production to implement instead.
+
+4. **The probe descriptions are mine, not sampled.** Five of eight were written
+   specifically to stress type coverage, so the 37.5% before-figure is a
+   property of a deliberately adversarial sample and is not an estimate of the
+   rate on natural input. What it establishes is that the rate was **high enough
+   to disqualify the gate**, not that it was 37.5% in general.
+
+5. **The WP2 latency estimate in the delivery plan is wrong.** 8–10 minutes for
+   100 instances was derived from the 4 724 ms Week 7 median, measured on a
+   one-table `users` prompt. These eight average 17.3 s including a cold start,
+   14.2 s excluding it, so 100 instances is **roughly 25–30 minutes** of
+   generation before any repair loops.
