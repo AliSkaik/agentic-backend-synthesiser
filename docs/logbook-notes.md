@@ -1042,3 +1042,138 @@ The chapter file lives in OneDrive and is saved as a new version; the submitted
    - _Residual risk:_ a stray "8-billion" written out in words would not appear
      in a search for `8B`. Cheap to re-check before submission, and worth doing
      once rather than trusting this figure twice.
+
+## Week 9 — 2026-08-11 — Agent 3 Layer 0, the grammar check on Agent 1's DDL
+
+**Done:** `src/agents/grammarVerifier.js`, a recursive-descent parser with an
+explicit parenthesis stack, and `src/synthesise.js`, the Agent 1 repair loop that
+gates on it. Until now nothing validated Agent 1's output at all: Layer 1 parses
+JavaScript, and Layer 2 reads the DDL lexically while assuming it is well formed,
+which Week 7 limitation 1 already recorded as unsafe. 101 assertions across the
+suite, all passing.
+
+The parenthesis stack is not decoration. It is the justification §2.5.1 gives for
+a context-free rather than a regular grammar, and `NUMERIC(10, 2)` inside a
+column list inside a table body is the construct that puts the problem beyond a
+regex. It can be pointed at in the code if an examiner asks.
+
+### Both grammars, measured
+
+The parser runs in two modes over the same input from one code path, so the two
+acceptance rates are comparable rather than merely both reported.
+
+| fixture | published §2.5.1 | extended |
+| --- | --- | --- |
+| `blog-schema.sql`   | fail line 1: `Expected TABLE after CREATE, found "TYPE"` | **pass**, 4 tables |
+| `orders-schema.sql` | fail line 1: `Expected TABLE after CREATE, found "TYPE"` | **pass**, 3 tables |
+
+**Published grammar: 0 of 2.** This confirms by execution the figure the WP0
+entry established by reading.
+
+Both fixtures fail on the same first construct, `CREATE TYPE ... AS ENUM`, which
+hides how much else is unsupported. Removing the `CREATE TYPE` statements and
+re-running moves the failure to the first `NOT NULL` in each file. So the
+published grammar does not fail these fixtures at one point; it fails at the
+first of several, and the count of distinct unsupported constructs is larger
+than the count of reported errors. That distinction matters for how the coverage
+gap is described in §2.5.1: it is not "one missing production".
+
+### The published grammar misattributes its own failure
+
+Removing `CREATE TYPE` and re-running reports **`UnclosedParenthesis` at line
+1**, pointing at the `(` that opens the table body. The parser is correct about
+its state — that parenthesis is genuinely never closed from its point of view —
+and wrong about the cause, which is the unsupported `NOT NULL` fifteen tokens
+later. It stops recognising column definitions, so the `)` it eventually meets
+is unreachable.
+
+This is worth recording because the feedback string is the entire mechanism of
+the repair loop. A critique that names the wrong construct sends Agent 1 to fix
+a parenthesis that is not broken. Under the extended grammar the situation does
+not arise on current fixtures, but the failure mode is structural rather than
+incidental: **any unsupported construct inside a table body surfaces as an
+unclosed parenthesis**, because the parser cannot distinguish "this is not a
+column definition" from "the list ended early".
+
+### Layer 0 and Layer 2 agree, and that is now asserted
+
+Both readers extract identical table and column sets from both fixtures, checked
+per table rather than in aggregate. Layer 2's reader is a lexical scan with a
+documented list of things it does not understand; Layer 0's is structural. The
+agreement is a test result, not a shared implementation — they remain two
+independent readers of the same input.
+
+The reason this is a correctness requirement rather than a tidiness one: if
+Layer 0 accepts a DDL that Layer 2 then reads short by one column, Layer 2
+reports a real column as invented. That is a false failure in the expensive
+direction, and it sends Agent 2 into a ~200 s repair loop to fix code that was
+correct, with an error message pointing at the routes rather than at the
+disagreement.
+
+### The second reflection path
+
+Layer 0 runs once on the DDL before the Agent 2 loop is entered, in its own
+bounded loop, rather than inside `verify()`. The DDL does not change for the
+whole duration of the Agent 2 loop, so checking it there would re-run an
+identical check on every attempt and leave `reflect()` to decide which agent a
+failure belongs to. In `src/synthesise.js` the answer is structural: whatever
+fails there was produced by Agent 1.
+
+Both loops keep the same conventions — attempt cap, single latest critique never
+an accumulation, emit nothing on exhaustion, infrastructure failure typed
+separately from verification failure. Those were argued once in `reflect.js` and
+re-deciding them differently here would have made the chapter describe two
+conventions instead of one.
+
+`synthesiseSchema` gained the `feedback` parameter it never had. Without it the
+loop would re-send the description unchanged, and under `temperature: 0` with
+`seed: 42` that returns byte-identical broken DDL until the cap — a loop that
+consumes five generations while appearing to work. The loop tests inject a
+generator and cannot see this, so it is covered by a separate test on the prompt
+builder.
+
+### Technical limitations
+
+1. **Nothing here has met the live model.** Every result above is against two
+   recorded fixtures and injected generators. Whether Agent 1 can act on a Layer
+   0 critique is unanswered, and it is a different question from whether Agent 2
+   could act on a Layer 1 critique — the DDL grammar critique names a construct
+   to remove, not a syntax error to replace.
+   - _Consequence:_ the convergence behaviour of this loop is currently
+     **unmeasured**. A live paired run is the next thing this needs.
+
+2. **CHECK expressions are balanced, not parsed.** `CHECK (quantity > 0)` is
+   accepted as a parenthesis-balanced run of tokens. Balance is the property
+   this layer owns and the published grammar contains no expression production,
+   so implementing one would be inventing grammar the thesis does not print.
+   - _Residual risk:_ `CHECK (quantity >>> 0)` is accepted. Layer 0 asserts the
+     statement is well formed, not that it is meaningful.
+
+3. **A hand-written parser for a grammar subset is not a PostgreSQL parser.**
+   Not understood: `ALTER TABLE`, views, indexes, multi-word type names
+   (`DOUBLE PRECISION`, `TIMESTAMP WITH TIME ZONE`), array types, schema-
+   qualified names, `GENERATED ... AS IDENTITY`, and deferrable constraint
+   clauses.
+   - _Consequence:_ each of these is a **false failure** — valid PostgreSQL that
+     Agent 1 could legitimately emit and this layer would reject, sending it
+     into a repair loop for correct output. This is the more expensive error
+     direction, and it is the direction this parser errs in by construction.
+   - _Mitigation:_ the WP2 Spider run over 100 generated schemas is the first
+     sample large enough to say how often it happens. Until then the rate is
+     unknown, not low.
+
+4. **The extended grammar was written against two fixtures.** It covers what
+   Agent 1 emitted on a blog schema and an orders schema. Treating it as "what
+   Agent 1 emits" generalises from n=2, and limitation 3 is the list of ways
+   that generalisation can be wrong.
+
+5. **TDD was not followed uniformly.** The contract assertions, the two grammar
+   modes, the cross-reader agreement, the whole Agent 1 loop, and the prompt
+   builder were each written as failing tests first and watched fail. The four
+   error-type cases were not: the parser already distinguished them when those
+   tests were written, so they passed on first run and prove only that the
+   behaviour exists, not that the tests can detect its absence.
+   - _Consequence:_ those four are the weakest tests in the file. If the error
+     taxonomy matters to a later result — and it does, since WP2 records the
+     Layer 0 error type per instance — they should be re-derived by breaking the
+     parser deliberately and confirming each test fails.
