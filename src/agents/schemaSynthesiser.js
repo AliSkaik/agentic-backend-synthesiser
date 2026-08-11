@@ -20,10 +20,23 @@ function stripFences(text) {
   return text.replace(/```(?:sql)?/gi, "").trim();
 }
 
-export async function synthesiseSchema(prompt) {
-  const raw = await generate(prompt, {
+// Only the single latest critique is ever appended, never an accumulation of
+// them the same rule Agent 2 follows. Under temperature 0 with a fixed seed,
+// re-sending an unchanged prompt returns byte-identical output, so the critique
+// is the only thing that can make attempt k+1 differ from attempt k. That makes
+// this function load-bearing rather than cosmetic: if the feedback is dropped
+// here, the Layer 0 repair loop burns its whole attempt cap on identical DDL
+// while appearing to work.
+export function buildSchemaPrompt(description, feedback) {
+  if (!feedback) return description;
+  return [description, "", feedback].join("\n");
+}
+
+export async function synthesiseSchema(description, { feedback = null, timeoutMs } = {}) {
+  const raw = await generate(buildSchemaPrompt(description, feedback), {
     system: SYSTEM_INSTRUCTION,
     options: { temperature: 0, seed: 42 },
+    timeoutMs,
   });
   return stripFences(raw);
 }
