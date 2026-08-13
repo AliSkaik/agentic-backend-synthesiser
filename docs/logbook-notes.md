@@ -1975,3 +1975,80 @@ stating because it is actionable for anyone building a verifier.
    This affects Layer 0 acceptance as described above. It does **not** affect the
    precision and recall figures, which are computed from the schema each arm
    produced by the same reader in both cases.
+
+## Week 9 — 2026-08-13 — Scenario B design, fixed before the run
+
+Scenario A exposed a comparison that measured the harness rather than the model.
+Scenario B contains two asymmetries of the same kind, both larger. They are
+settled here, before any Scenario B instance exists.
+
+### Asymmetry 1, the important one: repaired against unrepaired
+
+The pipeline runs two bounded reflection loops. The baseline gets one call. A
+verdict comparison between "the pipeline's output after up to ten generations"
+and "the baseline's first and only attempt" is not a comparison of generation
+quality — it is a comparison of a system with repair against a system without it.
+
+**Both are measured and reported separately:**
+
+- **baseline** — one call, one verdict.
+- **pipeline, attempt 1** — Agent 1's first schema and Agent 2's first module,
+  before any feedback. This is the like-for-like arm and it is what a single-shot
+  comparison must cite.
+- **pipeline, final** — after both loops converge or exhaust.
+
+The difference between the second and third rows is the value the loop adds, and
+it is a separate claim from the difference between the first and second. Chapter
+IV must not collapse them. Metric 3, mean iterations to convergence, applies to
+the pipeline only; the asymmetry is stated rather than the baseline being
+recorded as zero.
+
+### Asymmetry 2: extraction, the same defect that invalidated Layer 0 in Scenario A
+
+The baseline is told to fence its JavaScript, so the splitter hands Layer 1 a
+clean module. Agent 2 is told **not** to fence, and its output reaches Layer 1
+through `stripFences` alone. Layer 1 acceptance across arms would therefore
+measure the delimiter, exactly as Layer 0 acceptance did.
+
+**Decision, in three parts.**
+
+1. **Agent 2's prompt is not changed.** Telling it to fence would make the arms
+   symmetric, and it would also make v5 a different artefact from the one measured
+   throughout Weeks 8 and 9. Every prompt-iteration result, the constraint
+   saturation findings, and both paired reflection runs describe v5 as it stands.
+   Buying symmetry by invalidating the project's own prior evidence is a bad
+   trade.
+
+2. **Layer 1 and Layer 2 acceptance are reported per arm, with the extraction
+   path stated, and carry no comparative claim.** Same treatment as Layer 0 in
+   Scenario A.
+
+3. **A symmetric measure is reported alongside.** `splitArtefacts` is applied to
+   the raw output of **both** arms, and the proportion of responses containing
+   content that had to be removed before the module could be parsed is recorded
+   for each. One function, both arms, no delimiter advantage. This is the
+   Scenario B equivalent of the 63/100 against 49/99 figure that replaced the
+   invalid Layer 0 comparison.
+
+### What Scenario B therefore reports
+
+| measure | baseline | pipeline attempt 1 | pipeline final |
+| --- | --- | --- | --- |
+| schema precision and recall | yes | yes | yes |
+| non-code content requiring extraction | yes | yes | — |
+| Layer 0/1/2 verdicts | per arm, no cross-claim | per arm | per arm |
+| iterations to convergence | not applicable | — | yes |
+| latency | yes | yes | yes |
+| tokens | yes | yes | yes |
+
+Two fixtures only, blog and orders, so every figure here is n=2 and is a
+description of two runs rather than an estimate of anything. Scenario A is where
+the sample size lives.
+
+### Why this is recorded now
+
+The Layer 0 comparison in Scenario A looked decisive and would have been easier
+to publish than to interrogate. It was traced to the splitter only because the
+number was implausible against the previous day's evidence. The same trap is
+visible in advance here, so the alternative is chosen before the numbers exist
+rather than after they turn out to be flattering.
