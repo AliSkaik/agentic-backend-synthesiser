@@ -97,6 +97,48 @@ export function tokenise(source) {
       continue;
     }
 
+    // Dollar-quoted string, $$...$$ or $tag$...$tag$. Function bodies arrive
+    // this way and contain semicolons, so the whole body must become one token
+    // or every statement boundary after it is wrong.
+    if (ch === "$") {
+      const startLine = line;
+      const startColumn = column;
+      const tag = source.slice(i).match(/^\$[A-Za-z_]\w*\$|^\$\$/);
+      if (!tag) {
+        return {
+          tokens,
+          error: {
+            type: "UnexpectedToken",
+            message: 'Unexpected character "$"',
+            line,
+            column,
+          },
+        };
+      }
+      const close = source.indexOf(tag[0], i + tag[0].length);
+      if (close === -1) {
+        return {
+          tokens,
+          error: {
+            type: "UnexpectedToken",
+            message: `Unterminated dollar-quoted string opened with ${tag[0]}`,
+            line: startLine,
+            column: startColumn,
+          },
+        };
+      }
+      const body = source.slice(i, close + tag[0].length);
+      for (const c of body) {
+        if (c === "\n") {
+          line += 1;
+          column = 0;
+        } else column += 1;
+      }
+      i = close + tag[0].length;
+      push("string", body, startLine, startColumn);
+      continue;
+    }
+
     // Single-quoted literal. Agent 1 emits these in DEFAULT and ENUM clauses.
     if (ch === "'") {
       const startLine = line;
@@ -303,8 +345,138 @@ function parseStatement(parser) {
     if (parser.isWord("DOMAIN", 1)) return parseCreateDomain(parser);
     if (parser.isWord("INDEX", 1)) return parseCreateIndex(parser);
     if (parser.isWord("UNIQUE", 1) && parser.isWord("INDEX", 2)) return parseCreateIndex(parser);
+    if (parser.isWord("VIEW", 1)) return parseCreateView(parser);
+    if (parser.isWord("FUNCTION", 1)) return parseCreateFunction(parser);
+    if (parser.isWord("OR", 1) && parser.isWord("REPLACE", 2)) {
+      if (parser.isWord("FUNCTION", 3)) return parseCreateFunction(parser);
+      return parseCreateView(parser);
+    }
   }
+  if (parser.isWord("ALTER") && parser.isWord("TABLE", 1)) return parseAlterTable(parser);
   return parseCreateTable(parser);
+}
+
+// EXTENDED ONLY. Added 2026-08-12 after the Spider smoke test rejected valid
+// output on an independent sample. ALTER TABLE is named in Agent 1's own system
+// prompt as permitted output, so rejecting it was a false failure against the
+// artefact's own specification.
+//
+// <alter_table_stmt> ::= "ALTER TABLE" <table_name> <action> { "," <action> } ";"
+//
+// The action is validated for its leading verb and then consumed as a balanced
+// token run to the terminating semicolon, the same treatment <balanced_group>
+// receives elsewhere. Requiring the verb is what stops this becoming a
+// skip-to-semicolon rule that would accept anything.
+const ALTER_ACTIONS = new Set(["ADD", "DROP", "ALTER", "RENAME", "SET", "OWNER", "VALIDATE"]);
+
+function parseAlterTable(parser) {
+  parser.next(); // ALTER
+  parser.next(); // TABLE
+  if (parser.isWord("ONLY")) parser.next();
+
+  if (parser.peek().type !== "identifier") {
+    return parser.fail("UnexpectedToken", "Expected a table name after ALTER TABLE");
+  }
+  parser.next();
+
+  if (!(parser.peek().type === "identifier" && ALTER_ACTIONS.has(parser.peek().value.toUpperCase()))) {
+    return parser.fail(
+      "UnexpectedToken",
+      `Expected ADD, DROP, ALTER, RENAME or SET after the table name, found "${parser.peek().value ?? "end of input"}"`
+    );
+  }
+
+  return consumeToSemicolon(parser, "Expected ; after the ALTER TABLE statement");
+}
+
+// EXTENDED ONLY. A view's body is an arbitrary SELECT, which this grammar does
+// not specify and deliberately does not parse the same limit stated for CHECK
+// predicates. The header is validated; the query is consumed balance-aware.
+function parseCreateView(parser) {
+  parser.next(); // CREATE
+  if (parser.isWord("OR")) {
+    parser.next();
+    parser.next(); // REPLACE
+  }
+  parser.next(); // VIEW
+
+  if (parser.peek().type !== "identifier") {
+    return parser.fail("UnexpectedToken", "Expected a view name after CREATE VIEW");
+  }
+  parser.next();
+
+  if (parser.isPunctuation("(")) {
+    const error = parseBalanced(parser, "Expected ( listing the view columns");
+    if (error) return error;
+  }
+
+  if (!parser.isWord("AS")) {
+    return parser.fail("UnexpectedToken", "Expected AS after the view name");
+  }
+  parser.next();
+
+  if (!parser.isWord("SELECT") && !parser.isWord("WITH")) {
+    return parser.fail("UnexpectedToken", "Expected a SELECT query after AS");
+  }
+
+  return consumeToSemicolon(parser, "Expected ; after the CREATE VIEW statement");
+}
+
+// EXTENDED ONLY. Added after the 100-instance Spider run, where 13 schemas
+// carried a stored function alongside their tables.
+//
+// <create_function_stmt> ::= "CREATE" [ "OR REPLACE" ] "FUNCTION" <name>
+//                            "(" [ <args> ] ")" "RETURNS" <data_type>
+//                            "AS" <dollar_quoted_body> { <option> } ";"
+//
+// The body is a dollar-quoted string and is one token by the time it arrives
+// here, so the semicolons inside it cannot be mistaken for statement ends. Its
+// contents are procedural code in another language and are not parsed the same
+// limit already stated for CHECK predicates and view queries.
+function parseCreateFunction(parser) {
+  parser.next(); // CREATE
+  if (parser.isWord("OR")) {
+    parser.next();
+    parser.next(); // REPLACE
+  }
+  parser.next(); // FUNCTION
+
+  if (parser.peek().type !== "identifier") {
+    return parser.fail("UnexpectedToken", "Expected a function name after CREATE FUNCTION");
+  }
+  parser.next();
+
+  const error = parseBalanced(parser, "Expected ( listing the function arguments");
+  if (error) return error;
+
+  if (parser.isWord("RETURNS")) {
+    parser.next();
+    if (parser.isWord("TABLE")) {
+      parser.next();
+      const returnsTable = parseBalanced(parser, "Expected ( after RETURNS TABLE");
+      if (returnsTable) return returnsTable;
+    } else {
+      const type = parseDataType(parser);
+      if (type) return type;
+    }
+  }
+
+  return consumeToSemicolon(parser, "Expected ; after the CREATE FUNCTION statement");
+}
+
+// Consumes tokens up to the statement's terminating semicolon, tracking
+// parenthesis depth so a semicolon nested inside parentheses does not end it.
+function consumeToSemicolon(parser, message) {
+  for (;;) {
+    if (parser.atEof()) return unclosedOr(parser, message);
+    if (parser.isPunctuation("(")) {
+      const error = parseBalanced(parser, "Expected (");
+      if (error) return error;
+      continue;
+    }
+    if (parser.isPunctuation(";")) return parser.expectPunctuation(";", message);
+    parser.next();
+  }
 }
 
 // EXTENDED ONLY.
@@ -626,7 +798,42 @@ function parseReferences(parser) {
     return parser.fail("UnexpectedToken", "Expected a table name after REFERENCES");
   }
   parser.next();
-  return parseBalanced(parser, "Expected ( after the referenced table");
+  const error = parseBalanced(parser, "Expected ( after the referenced table");
+  if (error) return error;
+  return parseReferentialActions(parser);
+}
+
+// EXTENDED ONLY. `ON DELETE CASCADE`, `ON UPDATE SET NULL`, and the rest.
+// Added after the 100-instance Spider run, where their absence was reported as
+// an unclosed parenthesis rather than as an unknown clause the misattribution
+// already recorded for the published grammar, reappearing.
+const REFERENTIAL_ACTIONS = new Set(["CASCADE", "RESTRICT"]);
+
+function parseReferentialActions(parser) {
+  while (parser.isWord("ON") && (parser.isWord("DELETE", 1) || parser.isWord("UPDATE", 1))) {
+    parser.next(); // ON
+    parser.next(); // DELETE | UPDATE
+
+    if (parser.isWord("NO") && parser.isWord("ACTION", 1)) {
+      parser.next();
+      parser.next();
+      continue;
+    }
+    if (parser.isWord("SET") && (parser.isWord("NULL", 1) || parser.isWord("DEFAULT", 1))) {
+      parser.next();
+      parser.next();
+      continue;
+    }
+    if (parser.peek().type === "identifier" && REFERENTIAL_ACTIONS.has(parser.peek().value.toUpperCase())) {
+      parser.next();
+      continue;
+    }
+    return parser.fail(
+      "UnexpectedToken",
+      `Expected CASCADE, RESTRICT, NO ACTION, SET NULL or SET DEFAULT, found "${parser.peek().value ?? "end of input"}"`
+    );
+  }
+  return null;
 }
 
 // A type name, optionally with a precision argument: VARCHAR(100),
@@ -831,7 +1038,7 @@ function parseExtendedConstraints(parser) {
  * @param {"published"|"extended"} [options.grammar="published"]
  *   `published` is §2.5.1 exactly as printed. `extended` covers the constructs
  *   Agent 1 actually emits. Both verdicts come from this one code path so the
- *   two acceptance rates are comparable; WP2's Spider run records both per
+ *   two acceptance rates are comparable; the Spider evaluation records both per
  *   instance. The default is `published` deliberately: the strict reading is
  *   the one a caller should have to opt out of, not into.
  * @returns {{passed: boolean, layer: number, error?: object, feedback?: string}}

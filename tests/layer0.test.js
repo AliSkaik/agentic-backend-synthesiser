@@ -196,8 +196,58 @@ for (const [name, ddl] of nowAccepted) {
   check(`published still rejects ${name}`, strict.passed === false);
 }
 
+// Found by the Spider smoke test on 2026-08-12, on an independent sample.
+// Both are valid PostgreSQL, and ALTER TABLE is named in Agent 1's own system
+// prompt as permitted output.
+const foundBySpider = [
+  ["ALTER TABLE ADD CONSTRAINT FOREIGN KEY", "CREATE TABLE a (id INT);\nCREATE TABLE b (a_id INT);\nALTER TABLE b ADD CONSTRAINT fk_a FOREIGN KEY (a_id) REFERENCES a(id);"],
+  ["ALTER TABLE ADD COLUMN", "CREATE TABLE a (id INT);\nALTER TABLE a ADD COLUMN note TEXT;"],
+  ["ALTER TABLE ADD PRIMARY KEY", "CREATE TABLE a (id INT);\nALTER TABLE a ADD PRIMARY KEY (id);"],
+  ["CREATE VIEW", "CREATE TABLE a (id INT, n INT);\nCREATE VIEW totals AS SELECT id, SUM(n) FROM a GROUP BY id;"],
+];
+
+for (const [name, ddl] of foundBySpider) {
+  const result = verifyGrammar(ddl, { grammar: "extended" });
+  check(
+    `extended accepts ${name}`,
+    result.passed === true,
+    result.passed ? "" : `${result.error.type}: ${result.error.message} (line ${result.error.line})`
+  );
+  check(`published still rejects ${name}`, verifyGrammar(ddl, { grammar: "published" }).passed === false);
+}
+
+// Found by reading the 65 rejections of the 100-instance Spider run on
+// 2026-08-12. Both are valid PostgreSQL. The referential actions were reported
+// as UnclosedParenthesis, which is the misattribution recorded for the published
+// grammar arriving again: an unrecognised construct inside a table body makes
+// the closing parenthesis unreachable.
+const foundBySpiderRun = [
+  ["ON DELETE CASCADE", "CREATE TABLE a (id INT);\nCREATE TABLE b (\n    a_id INT REFERENCES a(id) ON DELETE CASCADE\n);"],
+  ["ON DELETE SET NULL and ON UPDATE", "CREATE TABLE a (id INT);\nCREATE TABLE b (\n    a_id INT REFERENCES a(id) ON DELETE SET NULL ON UPDATE CASCADE\n);"],
+  ["table-level FK with referential action", "CREATE TABLE a (id INT);\nCREATE TABLE b (\n    a_id INT,\n    FOREIGN KEY (a_id) REFERENCES a(id) ON DELETE RESTRICT\n);"],
+  ["dollar-quoted function body", "CREATE TABLE s (n INT);\nCREATE OR REPLACE FUNCTION avg_n() RETURNS FLOAT AS $$\nBEGIN\n    RETURN AVG(n) FROM s;\nEND;\n$$ LANGUAGE plpgsql;"],
+  ["tagged dollar quoting", "CREATE FUNCTION f() RETURNS INT AS $body$ BEGIN RETURN 1; END; $body$ LANGUAGE plpgsql;"],
+];
+
+for (const [name, ddl] of foundBySpiderRun) {
+  const result = verifyGrammar(ddl, { grammar: "extended" });
+  check(
+    `extended accepts ${name}`,
+    result.passed === true,
+    result.passed ? "" : `${result.error.type}: ${result.error.message} (line ${result.error.line})`
+  );
+  check(`published still rejects ${name}`, verifyGrammar(ddl, { grammar: "published" }).passed === false);
+}
+
 // The gate must not be widened into uselessness. These stay rejected.
 const stillRejected = [
+  // The Spider descriptions ask questions, and the model sometimes answers them
+  // with queries instead of only defining the schema. That violates its own
+  // system prompt and Layer 0 must keep catching it.
+  ["a bare SELECT is not schema definition", "CREATE TABLE a (id INT);\nSELECT COUNT(*) FROM a;"],
+  // 5 of 100 Spider instances appended sample data. Same class as SELECT: valid
+  // SQL, but not schema definition, and outside what Agent 1 was asked for.
+  ["INSERT is not schema definition", "CREATE TABLE a (id INT);\nINSERT INTO a VALUES (1);"],
   ["CREATE TYPE over a base type is not valid PostgreSQL", "CREATE TYPE tag_name AS VARCHAR(255);"],
   ["malformed CREATE INDEX", "CREATE TABLE d (\n    id INT\n);\nCREATE INDEX idx_id ON d (id;"],
   ["array suffix left open", "CREATE TABLE d (\n    id INT,\n    k TEXT[\n);"],
