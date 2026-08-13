@@ -1,0 +1,468 @@
+{
+  "summary": {
+    "model": "qwen2.5-coder:7b",
+    "temperature": 0,
+    "seed": 42,
+    "ranAt": "2026-08-12T05:14:50.005Z",
+    "instances": 5,
+    "wallClockMs": 156189,
+    "emptyOutput": 0,
+    "producedNoSchema": 0,
+    "fallbackDescriptions": [
+      "academic"
+    ],
+    "layer0": {
+      "extendedAccepted": 1,
+      "publishedAccepted": 0
+    },
+    "readerDisagreements": 0,
+    "exact": {
+      "macro": {
+        "tables.precision": 0.39999999999999997,
+        "tables.recall": 0.15333333333333335,
+        "columns.precision": 0.19777777777777777,
+        "columns.recall": 0.03822790113112694,
+        "foreignKeys.precision": 0,
+        "foreignKeys.recall": 0
+      },
+      "micro": {
+        "tables.precision": 0.25,
+        "tables.recall": 0.11764705882352941,
+        "columns.precision": 0.08620689655172414,
+        "columns.recall": 0.037037037037037035,
+        "foreignKeys.precision": 0,
+        "foreignKeys.recall": 0
+      },
+      "typeAccuracyMicro": 0.8
+    },
+    "normalised": {
+      "macro": {
+        "tables.precision": 0.39999999999999997,
+        "tables.recall": 0.15333333333333335,
+        "columns.precision": 0.23777777777777773,
+        "columns.recall": 0.05251361541684122,
+        "foreignKeys.precision": 0,
+        "foreignKeys.recall": 0
+      },
+      "micro": {
+        "tables.precision": 0.25,
+        "tables.recall": 0.11764705882352941,
+        "columns.precision": 0.1206896551724138,
+        "columns.recall": 0.05185185185185185,
+        "foreignKeys.precision": 0,
+        "foreignKeys.recall": 0
+      },
+      "typeAccuracyMicro": 0.8571428571428571
+    }
+  },
+  "results": [
+    {
+      "db_id": "academic",
+      "fallbackDescription": true,
+      "latencyMs": 73394,
+      "chars": 1590,
+      "error": null,
+      "gold": {
+        "tables": 15,
+        "foreignKeys": 18
+      },
+      "layer0": {
+        "extended": {
+          "passed": true
+        },
+        "published": {
+          "passed": false,
+          "type": "UnexpectedToken",
+          "line": 1
+        }
+      },
+      "exact": {
+        "empty": false,
+        "tables": {
+          "gold": 15,
+          "generated": 7,
+          "matched": 0,
+          "precision": 0,
+          "recall": 0
+        },
+        "columns": {
+          "gold": 42,
+          "generated": 29,
+          "matched": 0,
+          "precision": 0,
+          "recall": 0
+        },
+        "foreignKeys": {
+          "gold": 18,
+          "generated": 6,
+          "matched": 0,
+          "precision": 0,
+          "recall": 0
+        },
+        "types": {
+          "matched": 0,
+          "correct": 0,
+          "accuracy": null
+        }
+      },
+      "normalised": {
+        "empty": false,
+        "tables": {
+          "gold": 15,
+          "generated": 7,
+          "matched": 0,
+          "precision": 0,
+          "recall": 0
+        },
+        "columns": {
+          "gold": 42,
+          "generated": 29,
+          "matched": 0,
+          "precision": 0,
+          "recall": 0
+        },
+        "foreignKeys": {
+          "gold": 18,
+          "generated": 6,
+          "matched": 0,
+          "precision": 0,
+          "recall": 0
+        },
+        "types": {
+          "matched": 0,
+          "correct": 0,
+          "accuracy": null
+        }
+      },
+      "readerDisagreement": false
+    },
+    {
+      "db_id": "activity_1",
+      "fallbackDescription": false,
+      "latencyMs": 13434,
+      "chars": 410,
+      "error": null,
+      "gold": {
+        "tables": 5,
+        "foreignKeys": 4
+      },
+      "layer0": {
+        "extended": {
+          "passed": false,
+          "type": "UnexpectedToken",
+          "line": 8
+        },
+        "published": {
+          "passed": false,
+          "type": "UnclosedParenthesis",
+          "line": 1
+        }
+      },
+      "exact": {
+        "empty": false,
+        "tables": {
+          "gold": 5,
+          "generated": 1,
+          "matched": 1,
+          "precision": 1,
+          "recall": 0.2
+        },
+        "columns": {
+          "gold": 22,
+          "generated": 3,
+          "matched": 2,
+          "precision": 0.6666666666666666,
+          "recall": 0.09090909090909091
+        },
+        "foreignKeys": {
+          "gold": 4,
+          "generated": 0,
+          "matched": 0,
+          "precision": null,
+          "recall": 0
+        },
+        "types": {
+          "matched": 2,
+          "correct": 2,
+          "accuracy": 1
+        }
+      },
+      "normalised": {
+        "empty": false,
+        "tables": {
+          "gold": 5,
+          "generated": 1,
+          "matched": 1,
+          "precision": 1,
+          "recall": 0.2
+        },
+        "columns": {
+          "gold": 22,
+          "generated": 3,
+          "matched": 2,
+          "precision": 0.6666666666666666,
+          "recall": 0.09090909090909091
+        },
+        "foreignKeys": {
+          "gold": 4,
+          "generated": 0,
+          "matched": 0,
+          "precision": null,
+          "recall": 0
+        },
+        "types": {
+          "matched": 2,
+          "correct": 2,
+          "accuracy": 1
+        }
+      },
+      "readerDisagreement": false
+    },
+    {
+      "db_id": "aircraft",
+      "fallbackDescription": false,
+      "latencyMs": 30824,
+      "chars": 994,
+      "error": null,
+      "gold": {
+        "tables": 5,
+        "foreignKeys": 4
+      },
+      "layer0": {
+        "extended": {
+          "passed": false,
+          "type": "UnexpectedToken",
+          "line": 21
+        },
+        "published": {
+          "passed": false,
+          "type": "UnclosedParenthesis",
+          "line": 1
+        }
+      },
+      "exact": {
+        "empty": false,
+        "tables": {
+          "gold": 5,
+          "generated": 3,
+          "matched": 2,
+          "precision": 0.6666666666666666,
+          "recall": 0.4
+        },
+        "columns": {
+          "gold": 28,
+          "generated": 10,
+          "matched": 1,
+          "precision": 0.1,
+          "recall": 0.03571428571428571
+        },
+        "foreignKeys": {
+          "gold": 4,
+          "generated": 3,
+          "matched": 0,
+          "precision": 0,
+          "recall": 0
+        },
+        "types": {
+          "matched": 1,
+          "correct": 1,
+          "accuracy": 1
+        }
+      },
+      "normalised": {
+        "empty": false,
+        "tables": {
+          "gold": 5,
+          "generated": 3,
+          "matched": 2,
+          "precision": 0.6666666666666666,
+          "recall": 0.4
+        },
+        "columns": {
+          "gold": 28,
+          "generated": 10,
+          "matched": 3,
+          "precision": 0.3,
+          "recall": 0.10714285714285714
+        },
+        "foreignKeys": {
+          "gold": 4,
+          "generated": 3,
+          "matched": 0,
+          "precision": 0,
+          "recall": 0
+        },
+        "types": {
+          "matched": 3,
+          "correct": 3,
+          "accuracy": 1
+        }
+      },
+      "readerDisagreement": false
+    },
+    {
+      "db_id": "allergy_1",
+      "fallbackDescription": false,
+      "latencyMs": 16495,
+      "chars": 490,
+      "error": null,
+      "gold": {
+        "tables": 3,
+        "foreignKeys": 2
+      },
+      "layer0": {
+        "extended": {
+          "passed": false,
+          "type": "UnexpectedToken",
+          "line": 17
+        },
+        "published": {
+          "passed": false,
+          "type": "UnexpectedToken",
+          "line": 1
+        }
+      },
+      "exact": {
+        "empty": false,
+        "tables": {
+          "gold": 3,
+          "generated": 2,
+          "matched": 0,
+          "precision": 0,
+          "recall": 0
+        },
+        "columns": {
+          "gold": 12,
+          "generated": 7,
+          "matched": 0,
+          "precision": 0,
+          "recall": 0
+        },
+        "foreignKeys": {
+          "gold": 2,
+          "generated": 1,
+          "matched": 0,
+          "precision": 0,
+          "recall": 0
+        },
+        "types": {
+          "matched": 0,
+          "correct": 0,
+          "accuracy": null
+        }
+      },
+      "normalised": {
+        "empty": false,
+        "tables": {
+          "gold": 3,
+          "generated": 2,
+          "matched": 0,
+          "precision": 0,
+          "recall": 0
+        },
+        "columns": {
+          "gold": 12,
+          "generated": 7,
+          "matched": 0,
+          "precision": 0,
+          "recall": 0
+        },
+        "foreignKeys": {
+          "gold": 2,
+          "generated": 1,
+          "matched": 0,
+          "precision": 0,
+          "recall": 0
+        },
+        "types": {
+          "matched": 0,
+          "correct": 0,
+          "accuracy": null
+        }
+      },
+      "readerDisagreement": false
+    },
+    {
+      "db_id": "apartment_rentals",
+      "fallbackDescription": false,
+      "latencyMs": 22012,
+      "chars": 715,
+      "error": null,
+      "gold": {
+        "tables": 6,
+        "foreignKeys": 6
+      },
+      "layer0": {
+        "extended": {
+          "passed": false,
+          "type": "UnexpectedToken",
+          "line": 20
+        },
+        "published": {
+          "passed": false,
+          "type": "UnclosedParenthesis",
+          "line": 1
+        }
+      },
+      "exact": {
+        "empty": false,
+        "tables": {
+          "gold": 6,
+          "generated": 3,
+          "matched": 1,
+          "precision": 0.3333333333333333,
+          "recall": 0.16666666666666666
+        },
+        "columns": {
+          "gold": 31,
+          "generated": 9,
+          "matched": 2,
+          "precision": 0.2222222222222222,
+          "recall": 0.06451612903225806
+        },
+        "foreignKeys": {
+          "gold": 6,
+          "generated": 2,
+          "matched": 0,
+          "precision": 0,
+          "recall": 0
+        },
+        "types": {
+          "matched": 2,
+          "correct": 1,
+          "accuracy": 0.5
+        }
+      },
+      "normalised": {
+        "empty": false,
+        "tables": {
+          "gold": 6,
+          "generated": 3,
+          "matched": 1,
+          "precision": 0.3333333333333333,
+          "recall": 0.16666666666666666
+        },
+        "columns": {
+          "gold": 31,
+          "generated": 9,
+          "matched": 2,
+          "precision": 0.2222222222222222,
+          "recall": 0.06451612903225806
+        },
+        "foreignKeys": {
+          "gold": 6,
+          "generated": 2,
+          "matched": 0,
+          "precision": 0,
+          "recall": 0
+        },
+        "types": {
+          "matched": 2,
+          "correct": 1,
+          "accuracy": 0.5
+        }
+      },
+      "readerDisagreement": false
+    }
+  ]
+}
