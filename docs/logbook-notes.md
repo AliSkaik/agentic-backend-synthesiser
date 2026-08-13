@@ -1587,3 +1587,114 @@ which would have written correct routes against a table that cannot be created.
    Multi-table schemas cost far more than the eight-description probe implied,
    and any future estimate should be built from this figure rather than from either
    earlier one.
+
+## Week 9 — 2026-08-13 — the monolithic baseline prompt, recorded before it runs
+
+**Done:** `src/eval/monolithicBaseline.js` and its splitter, with the prompt
+fixed and recorded here **before** the comparative run. An examiner will ask
+whether the baseline was handicapped, and the only defence is that the prompt was
+written down before any result existed.
+
+### The prompt, verbatim
+
+System instruction:
+
+```
+You are a backend engineer working with PostgreSQL and Node.js.
+```
+
+User prompt, with the feature description substituted:
+
+```
+Build the backend for the following feature.
+
+<description>
+
+Return both of these in a single response:
+
+1. The PostgreSQL schema, as CREATE statements.
+2. An Express router as one ES module implementing REST endpoints for that
+   schema. Query the database with pool.query, using a pg connection pool
+   imported from "../db.js".
+
+Put the SQL in a ```sql code block and the JavaScript in a ```javascript code
+block.
+```
+
+Same model, same `temperature: 0`, same `seed: 42`, same hardware as the
+pipeline arm.
+
+### What the baseline is and is not given, and why
+
+**Given:** the task, the target technologies, and the output format. Nothing
+else.
+
+**Withheld deliberately:** Agent 1's normalisation instruction, and every rule in
+Agent 2's system prompt — five routes per table, the join-table exemption,
+parameterised queries, `try`/`catch` with `next(err)`, the status-code table, 404
+via `result.rowCount`, the fixed-string PUT, and the DEFAULT-column allowlist for
+POST.
+
+Those rules **are** the harness. Supplying them to the baseline would be running
+the harness twice and calling one of the runs a control. The research question
+asks whether decomposition plus role-specialised prompting plus deterministic
+verification beats a single unstructured call, so the role prompts are the
+intervention under test and cannot appear on both sides.
+
+The counter-argument is worth stating because it will be raised: a competent
+developer might well write "normalised schema" in a single prompt, and its
+absence makes the baseline weaker than a careful practitioner's first attempt.
+That is accepted. The comparison is against an unstructured call, and the claim
+in Chapter IV must be worded as such rather than as a comparison against expert
+prompting.
+
+**The one interface detail that is supplied** — `pool.query` against a pool
+imported from `../db.js` — is not a quality hint. Layer 2 recognises `pool.query`
+calls, so a baseline reaching for a different data-access idiom would present
+Layer 2 with nothing to check and would pass trivially. Naming the interface
+removes a false pass **in the baseline's favour** and says nothing about how to
+write a correct handler.
+
+### Splitting is a measurement, not plumbing
+
+The response contains both artefacts and they must be separated before either
+verifier layer can judge them. Two rules were fixed after inspecting real output
+from two instances:
+
+- **Multiple SQL blocks are concatenated.** The model narrates and emits one
+  fenced block per table; schemas compose, so all of them are the schema.
+- **Exactly one JavaScript block is chosen, never concatenated.** Two modules
+  joined would duplicate import bindings and fail to parse. The block exporting a
+  router is preferred and, among candidates, the longest. The number of blocks
+  not chosen is recorded per instance rather than discarded — on `activity_1`
+  the second block was a usage example mounting the router in an app.
+
+A split failure is counted as a failure of that instance and never silently
+dropped.
+
+### First observation, from two smoke instances
+
+| | pipeline (Agent 1) | monolithic |
+| --- | --- | --- |
+| `activity_1` | 410 chars, 1 table | 151 chars, 1 table |
+| `aircraft` | 994 chars, 3 tables | 136 chars, 1 table |
+
+Latency 113.7 s and 76.6 s; token counts 171 prompt / 768 and 515 completion.
+Both split cleanly. Two instances prove nothing, and these are recorded only to
+show what was inspected before committing to the full run.
+
+### Technical limitations
+
+1. **The splitter's rules were fixed after seeing two real responses.** They were
+   written as failing tests first, but the shapes they handle came from output
+   already generated. A response shaped differently from those two may still
+   split wrongly, and the per-instance `extraCodeBlocks` count is what makes that
+   visible rather than silent.
+
+2. **Choosing the longest router block is a heuristic.** If a model emitted two
+   genuine router modules, the shorter would be discarded and its contents would
+   never reach the verifier. No instance has done this yet.
+
+3. **The baseline is weaker than expert prompting by construction**, per the
+   argument above. It is a control for the harness, not a claim about the best a
+   single prompt can do.
