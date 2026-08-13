@@ -1,0 +1,12 @@
+CREATE TABLE Climbers (
+    climber_id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    country VARCHAR(50),
+    points INTEGER DEFAULT 0
+);
+
+CREATE OR REPLACE FUNCTION count_climbers() RETURNS INTEGER AS $$
+BEGIN
+    RETURN (SELECT COUNT(*) FROM Climbers);
+END;
+$$ LANGUAGE plpgsql;

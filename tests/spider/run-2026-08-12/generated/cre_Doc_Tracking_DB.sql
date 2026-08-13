@@ -1,0 +1,10 @@
+CREATE TABLE CalendarItems (
+    id SERIAL PRIMARY KEY,
+    date DATE NOT NULL UNIQUE,
+    day_number INT NOT NULL CHECK (day_number BETWEEN 1 AND 365)
+);
+
+CREATE TABLE DocumentTypes (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE
+);
