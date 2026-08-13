@@ -40,7 +40,35 @@ export class OllamaResponseError extends Error {
   }
 }
 
-export async function generate(
+/**
+ * As generate(), but returns the whole response body rather than only the text.
+ *
+ * Ollama reports `prompt_eval_count` and `eval_count` on every non-streaming
+ * response, and metric 5 of the evaluation is token consumption across a full
+ * trajectory. generate() throws those away, and every existing caller depends on
+ * receiving a bare string, so the telemetry is added alongside rather than by
+ * changing what generate() returns.
+ *
+ * @returns {Promise<{response: string, promptTokens: number|null,
+ *                    evalTokens: number|null, totalDurationMs: number|null}>}
+ */
+export async function generateWithMetrics(prompt, options = {}) {
+  const body = await request(prompt, options);
+  return {
+    response: body.response,
+    promptTokens: body.prompt_eval_count ?? null,
+    evalTokens: body.eval_count ?? null,
+    // Ollama reports durations in nanoseconds.
+    totalDurationMs: body.total_duration ? Math.round(body.total_duration / 1e6) : null,
+  };
+}
+
+export async function generate(prompt, options = {}) {
+  const body = await request(prompt, options);
+  return body.response;
+}
+
+async function request(
   prompt,
   { system, options, timeoutMs = DEFAULT_TIMEOUT_MS } = {}
 ) {
@@ -58,8 +86,7 @@ export async function generate(
       signal: AbortSignal.timeout(timeoutMs),
     });
     if (!res.ok) throw new OllamaResponseError(res.status, res.statusText);
-    const data = await res.json();
-    return data.response;
+    return await res.json();
   } catch (err) {
     // AbortSignal.timeout aborts with a TimeoutError DOMException. Undici
     // surfaces it either directly or wrapped in a TypeError whose `cause` is

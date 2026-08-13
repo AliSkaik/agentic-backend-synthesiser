@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "node tests/layer0.test.js && node tests/layer2.test.js && node tests/schemaLoop.test.js && node tests/reflect.test.js && node tests/spiderScorer.test.js"
+    "test": "node tests/layer0.test.js && node tests/layer2.test.js && node tests/schemaLoop.test.js && node tests/reflect.test.js && node tests/spiderScorer.test.js && node tests/monolithic.test.js"
   },
   "keywords": [],
   "author": "",
