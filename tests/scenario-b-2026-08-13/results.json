@@ -1,0 +1,155 @@
+{
+  "n": 2,
+  "ranAt": "2026-08-13T07:40:37.911Z",
+  "results": [
+    {
+      "id": "blog",
+      "description": "A blog with users, posts and tags. Posts belong to a user and can have many tags.",
+      "baseline": {
+        "latencyMs": 224038,
+        "promptTokens": 130,
+        "evalTokens": 1464,
+        "split": true,
+        "splitReason": "ok",
+        "extraction": {
+          "removedChars": 715,
+          "fraction": 0.10060503728718162
+        },
+        "layer0": {
+          "passed": true,
+          "type": null
+        },
+        "verified": true,
+        "failedLayer": null,
+        "errorType": null
+      },
+      "pipeline": {
+        "schema": {
+          "outcome": "unverified",
+          "attempts": [
+            {
+              "attempt": 1,
+              "latencyMs": 24338,
+              "outputChars": 653,
+              "tableCount": null,
+              "verified": false,
+              "failedLayer": 0,
+              "errorType": "UnexpectedToken",
+              "feedbackSent": true
+            },
+            {
+              "attempt": 2,
+              "latencyMs": 22841,
+              "outputChars": 622,
+              "tableCount": null,
+              "verified": false,
+              "failedLayer": 0,
+              "errorType": "UnexpectedToken",
+              "feedbackSent": true
+            },
+            {
+              "attempt": 3,
+              "latencyMs": 21917,
+              "outputChars": 622,
+              "tableCount": null,
+              "verified": false,
+              "failedLayer": 0,
+              "errorType": "UnexpectedToken",
+              "feedbackSent": true
+            },
+            {
+              "attempt": 4,
+              "latencyMs": 22100,
+              "outputChars": 622,
+              "tableCount": null,
+              "verified": false,
+              "failedLayer": 0,
+              "errorType": "UnexpectedToken",
+              "feedbackSent": true
+            },
+            {
+              "attempt": 5,
+              "latencyMs": 20232,
+              "outputChars": 622,
+              "tableCount": null,
+              "verified": false,
+              "failedLayer": 0,
+              "errorType": "UnexpectedToken",
+              "feedbackSent": false
+            }
+          ]
+        },
+        "totalLatencyMs": 111432
+      }
+    },
+    {
+      "id": "orders",
+      "description": "An online shop with customers, orders and the line items on each order.",
+      "baseline": {
+        "latencyMs": 74686,
+        "promptTokens": 125,
+        "evalTokens": 540,
+        "split": true,
+        "splitReason": "ok",
+        "extraction": {
+          "removedChars": 784,
+          "fraction": 0.3156199677938808
+        },
+        "layer0": {
+          "passed": true,
+          "type": null
+        },
+        "verified": true,
+        "failedLayer": null,
+        "errorType": null
+      },
+      "pipeline": {
+        "schema": {
+          "outcome": "verified",
+          "attempts": [
+            {
+              "attempt": 1,
+              "latencyMs": 27467,
+              "outputChars": 837,
+              "tableCount": 3,
+              "verified": true,
+              "failedLayer": null,
+              "errorType": null,
+              "feedbackSent": false
+            }
+          ]
+        },
+        "routes": {
+          "outcome": "infrastructure",
+          "attempts": [
+            {
+              "attempt": 1,
+              "source": "generated",
+              "latencyMs": 252164,
+              "outputChars": 5811,
+              "routeCount": 13,
+              "verified": false,
+              "failedLayer": 1,
+              "errorType": "SyntaxError",
+              "violationCount": 0,
+              "feedbackSent": true
+            },
+            {
+              "attempt": 2,
+              "source": "generated",
+              "latencyMs": 306791,
+              "outputChars": null,
+              "routeCount": null,
+              "verified": false,
+              "failedLayer": null,
+              "errorType": "TypeError",
+              "violationCount": 0,
+              "feedbackSent": false
+            }
+          ]
+        },
+        "totalLatencyMs": 586432
+      }
+    }
+  ]
+}

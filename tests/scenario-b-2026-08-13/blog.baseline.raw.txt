@@ -1,0 +1,227 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE posts (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    user_id INT REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE tags (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE
+);
+
+CREATE TABLE post_tags (
+    post_id INT REFERENCES posts(id),
+    tag_id INT REFERENCES tags(id),
+    PRIMARY KEY (post_id, tag_id)
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Get all users with their posts and tags
+router.get('/users', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                u.id AS user_id,
+                u.username,
+                u.email,
+                p.id AS post_id,
+                p.title,
+                p.content,
+                p.created_at,
+                t.id AS tag_id,
+                t.name
+            FROM users u
+            LEFT JOIN posts p ON u.id = p.user_id
+            LEFT JOIN post_tags pt ON p.id = pt.post_id
+            LEFT JOIN tags t ON pt.tag_id = t.id;
+        `);
+
+        const users = {};
+        result.rows.forEach(row => {
+            if (!users[row.user_id]) {
+                users[row.user_id] = {
+                    id: row.user_id,
+                    username: row.username,
+                    email: row.email,
+                    posts: []
+                };
+            }
+            if (row.post_id) {
+                if (!users[row.user_id].posts.some(post => post.id === row.post_id)) {
+                    users[row.user_id].posts.push({
+                        id: row.post_id,
+                        title: row.title,
+                        content: row.content,
+                        created_at: row.created_at,
+                        tags: []
+                    });
+                }
+                if (row.tag_id) {
+                    const post = users[row.user_id].posts.find(post => post.id === row.post_id);
+                    if (!post.tags.some(tag => tag.id === row.tag_id)) {
+                        post.tags.push({
+                            id: row.tag_id,
+                            name: row.name
+                        });
+                    }
+                }
+            }
+        });
+
+        res.json(Object.values(users));
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get a single user with their posts and tags by ID
+router.get('/users/:id', async (req, res) => {
+    try {
+        const userId = parseInt(req.params.id);
+
+        const result = await pool.query(`
+            SELECT 
+                u.id AS user_id,
+                u.username,
+                u.email,
+                p.id AS post_id,
+                p.title,
+                p.content,
+                p.created_at,
+                t.id AS tag_id,
+                t.name
+            FROM users u
+            LEFT JOIN posts p ON u.id = p.user_id
+            LEFT JOIN post_tags pt ON p.id = pt.post_id
+            LEFT JOIN tags t ON pt.tag_id = t.id
+            WHERE u.id = $1;
+        `, [userId]);
+
+        const user = {};
+        result.rows.forEach(row => {
+            if (!user[row.user_id]) {
+                user[row.user_id] = {
+                    id: row.user_id,
+                    username: row.username,
+                    email: row.email,
+                    posts: []
+                };
+            }
+            if (row.post_id) {
+                if (!user[row.user_id].posts.some(post => post.id === row.post_id)) {
+                    user[row.user_id].posts.push({
+                        id: row.post_id,
+                        title: row.title,
+                        content: row.content,
+                        created_at: row.created_at,
+                        tags: []
+                    });
+                }
+                if (row.tag_id) {
+                    const post = user[row.user_id].posts.find(post => post.id === row.post_id);
+                    if (!post.tags.some(tag => tag.id === row.tag_id)) {
+                        post.tags.push({
+                            id: row.tag_id,
+                            name: row.name
+                        });
+                    }
+                }
+            }
+        });
+
+        res.json(user[userId] || {});
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Create a new post for a user
+router.post('/users/:id/posts', async (req, res) => {
+    try {
+        const userId = parseInt(req.params.id);
+        const { title, content } = req.body;
+
+        if (!title || !content) {
+            return res.status(400).json({ error: 'Title and content are required' });
+        }
+
+        const postResult = await pool.query(`
+            INSERT INTO posts (user_id, title, content)
+            VALUES ($1, $2, $3)
+            RETURNING id;
+        `, [userId, title, content]);
+
+        const postId = postResult.rows[0].id;
+
+        if (req.body.tags && req.body.tags.length > 0) {
+            for (const tagName of req.body.tags) {
+                let tagId;
+                const tagResult = await pool.query(`
+                    INSERT INTO tags (name)
+                    VALUES ($1)
+                    ON CONFLICT (name) DO NOTHING
+                    RETURNING id;
+                `, [tagName]);
+
+                if (tagResult.rows.length > 0) {
+                    tagId = tagResult.rows[0].id;
+                } else {
+                    const existingTagResult = await pool.query(`
+                        SELECT id FROM tags WHERE name = $1;
+                    `, [tagName]);
+                    tagId = existingTagResult.rows[0].id;
+                }
+
+                await pool.query(`
+                    INSERT INTO post_tags (post_id, tag_id)
+                    VALUES ($1, $2);
+                `, [postId, tagId]);
+            }
+        }
+
+        res.status(201).json({ id: postId });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Schema**:
+   - `users`: Stores user information.
+   - `posts`: Stores post information, linked to a user.
+   - `tags`: Stores tag information.
+   - `post_tags`: A junction table for many-to-many relationship between posts and tags.
+
+2. **Router**:
+   - `/users`: Returns all users with their posts and tags.
+   - `/users/:id`: Returns a single user with their posts and tags by ID.
+   - `/users/:id/posts`: Creates a new post for a specific user, optionally linking it to tags.
+
+This setup ensures that you can retrieve detailed information about users, including their associated posts and tags, in a single request.
