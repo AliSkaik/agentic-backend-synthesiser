@@ -45,8 +45,15 @@ for (const [index, item] of descriptions.slice(0, limit).entries()) {
   let metrics = { promptTokens: null, evalTokens: null, totalDurationMs: null };
   let error = null;
 
+  // Telemetry is persisted beside the response, because it cannot be recovered
+  // by re-reading one. A resumed run that did not restore it would silently
+  // report zero tokens for every reused instance, which is how the first
+  // hundred-instance run's per-instance token data was lost.
+  const metaPath = `${outDir}/raw/${item.db_id}.meta.json`;
+
   if (reused) {
     raw = readFileSync(rawPath, "utf8");
+    if (existsSync(metaPath)) metrics = JSON.parse(readFileSync(metaPath, "utf8"));
   } else {
     try {
       const response = await generateMonolithic(item.description);
@@ -72,7 +79,18 @@ for (const [index, item] of descriptions.slice(0, limit).entries()) {
   };
 
   if (raw !== null) {
-    if (!reused) writeFileSync(rawPath, raw);
+    if (!reused) {
+      writeFileSync(rawPath, raw);
+      writeFileSync(
+        metaPath,
+        JSON.stringify({
+          promptTokens: metrics.promptTokens,
+          evalTokens: metrics.evalTokens,
+          totalDurationMs: metrics.totalDurationMs,
+          latencyMs,
+        })
+      );
+    }
 
     const parts = splitArtefacts(raw);
     record.split = { ok: parts.split, reason: parts.reason, extraCodeBlocks: parts.extraCodeBlocks };
