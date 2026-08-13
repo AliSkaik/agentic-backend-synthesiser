@@ -920,7 +920,7 @@ repetitions of a defined representative subset**.
 
 The subset is defined here rather than at run time, so that it cannot be chosen
 after the timings are seen: **Scenario B** both feature-description fixtures,
-blog and orders. **Scenario A** the first ten instances of the WP2 Spider
+blog and orders. **Scenario A** the first ten instances of the Spider
 subset by index.
 
 This is a narrowing of what is measured, not of rigour the discarded
@@ -998,7 +998,7 @@ shipsation, in milliseconds"; it now states wall-clock elapsed time from
 ingestion of the natural-language input to serialisation of the output archive.
 
 The metric-4 wording describes a measurement the artefact cannot yet take. The
-archive is produced by the WP4 web layer, which does not exist, and `reflect()`
+archive is produced by the web application layer, which does not exist, and `reflect()`
 currently times each generation rather than the run. **The instrumentation must
 be built to match this definition, or the reported figure will not be the figure
 §2.8 defines.** Recorded here because that mismatch would otherwise surface in
@@ -1033,7 +1033,7 @@ The chapter file lives in OneDrive and is saved as a new version; the submitted
 4. **The 0/2 acceptance figure is computed against two fixtures.** It is a
    statement about the two DDL scripts in `tests/fixtures/`, not an estimate of
    how often the published grammar would reject Agent 1 output in general. The
-   WP2 Spider run will produce a hundred more DDL scripts and is the first
+   Spider run will produce a hundred more DDL scripts and is the first
    opportunity to replace this figure with one that means something.
 
 5. **The sweep count is a search result, not an audit.** 18 hits is what the
@@ -1067,7 +1067,7 @@ acceptance rates are comparable rather than merely both reported.
 | `blog-schema.sql`   | fail line 1: `Expected TABLE after CREATE, found "TYPE"` | **pass**, 4 tables |
 | `orders-schema.sql` | fail line 1: `Expected TABLE after CREATE, found "TYPE"` | **pass**, 3 tables |
 
-**Published grammar: 0 of 2.** This confirms by execution the figure the WP0
+**Published grammar: 0 of 2.** This confirms by execution the figure the 2026-08-10
 entry established by reading.
 
 Both fixtures fail on the same first construct, `CREATE TYPE ... AS ENUM`, which
@@ -1158,7 +1158,7 @@ builder.
      Agent 1 could legitimately emit and this layer would reject, sending it
      into a repair loop for correct output. This is the more expensive error
      direction, and it is the direction this parser errs in by construction.
-   - _Mitigation:_ the WP2 Spider run over 100 generated schemas is the first
+   - _Mitigation:_ the Spider run over 100 generated schemas is the first
      sample large enough to say how often it happens. Until then the rate is
      unknown, not low.
 
@@ -1174,7 +1174,7 @@ builder.
    tests were written, so they passed on first run and prove only that the
    behaviour exists, not that the tests can detect its absence.
    - _Consequence:_ those four are the weakest tests in the file. If the error
-     taxonomy matters to a later result — and it does, since WP2 records the
+     taxonomy matters to a later result — and it does, since the Spider evaluation records the
      Layer 0 error type per instance — they should be re-derived by breaking the
      parser deliberately and confirming each test fails.
 
@@ -1200,16 +1200,16 @@ rate was unknown.
 
 ### The question was reframed before the run, and that was the whole value
 
-The plan was to test whether Agent 1 can act on a Layer 0 critique. Reading the
+The intention was to test whether Agent 1 can act on a Layer 0 critique. Reading the
 code first changed the question: on the existing fixtures Agent 1 already passes,
 so the more likely live failure was never Agent 1 producing bad DDL — it was
 Agent 1 producing good DDL this parser rejects. **How often the critique is
 wrong matters more than whether the model can act on it**, and it had to be
-measured before WP2 rather than after.
+measured before the Spider evaluation rather than after.
 
 ### Why 37.5% was disqualifying rather than merely imprecise
 
-WP2 records the Layer 0 verdict across 100 Spider schemas and, if Layer 0 gates,
+the Spider evaluation records the Layer 0 verdict across 100 Spider schemas and, if Layer 0 gates,
 routes failures into an Agent 1 repair loop. At that rate roughly a third of
 instances would be re-prompted to correct SQL that was already correct. The
 resulting **mean-iterations-to-convergence** figure is metric 3 of §2.8 and is
@@ -1280,7 +1280,7 @@ in Week 7, observed in the opposite direction.
    The extension was written against the three failures this sample produced, so
    the sample cannot also validate it. 0/8 here means "the known gaps are
    closed", not "no gaps remain".
-   - _Mitigation:_ WP2's 100 Spider schemas are the first independent sample.
+   - _Mitigation:_ the 100 Spider schemas are the first independent sample.
      The Layer 0 verdict must be recorded there under both grammars, and the
      false-failure rate re-derived by reading the rejections rather than assumed
      from this number.
@@ -1304,8 +1304,155 @@ in Week 7, observed in the opposite direction.
    rate on natural input. What it establishes is that the rate was **high enough
    to disqualify the gate**, not that it was 37.5% in general.
 
-5. **The WP2 latency estimate in the delivery plan is wrong.** 8–10 minutes for
-   100 instances was derived from the 4 724 ms Week 7 median, measured on a
-   one-table `users` prompt. These eight average 17.3 s including a cold start,
+5. **The working estimate for a 100-instance evaluation is wrong.** 8–10 minutes
+   was derived from the 4 724 ms Week 7 median, measured on a one-table `users`
+   prompt. These eight average 17.3 s including a cold start,
    14.2 s excluding it, so 100 instances is **roughly 25–30 minutes** of
    generation before any repair loops.
+
+## Week 9 — 2026-08-12 — Spider metric specification, written before the run
+
+**Done:** no results. This entry fixes the scoring rules, the sample and the
+input construction **before a single instance is generated**, because every one
+of them could otherwise be chosen after seeing the scores. Nothing below was
+decided with any generated DDL in view.
+
+Three defects in the evaluation design as originally scoped were found while
+preparing this, and are recorded here rather than silently fixed.
+
+### Defect 1: the dev split cannot supply 100 instances
+
+The design assumed the sample could be "the first 100 instances by index after
+sorting by `db_id`" from the 1,034-instance dev split. **The dev split contains 1,034 questions but
+only 20 distinct databases.** Agent 1 synthesises one schema per *database*, so
+that rule would have generated 20 schemas about five times each — byte-identical
+repeats under `temperature: 0` and `seed: 42` — and then counted the same schema
+up to eight times in a pooled precision figure.
+
+**Rule as fixed:** every database in the Spider release (`tables.json`, 166
+databases), sorted by `db_id` ascending, first 100 taken. Saved to
+`tests/spider/subset-100.json` with the rule text.
+
+The train/dev distinction is not preserved and does not need to be: it exists to
+prevent test leakage for *trained* semantic parsers, and nothing here is trained.
+§2.8's "drawn from the development split" needs one clause changed to say the
+database collection of the release.
+
+### Defect 2: Spider supplies questions, not feature descriptions
+
+The gold standard is each database's schema, but the natural-language input has
+to come from somewhere. Three constructions were considered and the choice is
+recorded because it determines what the experiment measures:
+
+- **db_id alone** — no leakage but almost no information; recall would be low
+  and uninformative.
+- **db_id plus gold table names** — rejected outright. The answer would be
+  inside the prompt and the result would measure transcription.
+- **db_id plus its first five Spider questions** — chosen. The questions state
+  what the system must answer without naming tables, so structure is inferred
+  rather than copied.
+
+**Rule as fixed:** humanised `db_id` (underscores to spaces, trailing numeric
+suffix dropped), then the first five questions for that database in dataset
+order. Every description is saved verbatim to `tests/spider/descriptions-100.json`
+so the run is reproducible from the repository alone.
+
+### Defect 3: three databases have no questions in the distributed dataset
+
+`academic`, `geo` and `imdb` come from Spider's `train_others` file, which the
+`xlangai/spider` distribution does not carry. They receive the db_id sentence
+alone.
+
+**They were not swapped out.** Replacing sample members after the selection rule
+is fixed is the exact manipulation the pre-registration exists to prevent. They
+stay in, are flagged `fallback: true`, and their scores are reported separately
+so the weaker prompt is visible rather than averaged away.
+
+### The metric specification
+
+1. **Unit.** One database is one instance. n = 100.
+
+2. **What is scored.** Tables, columns, column types and foreign keys extracted
+   from the generated DDL by `parseSchema` (`src/agents/relationalValidator.js`),
+   the lexical reader, applied uniformly. It is used rather than Layer 0's
+   structural map because it returns a schema even for DDL that fails to parse,
+   which keeps "unparseable" and "wrong" as separate measurements instead of
+   collapsing one into the other.
+
+3. **Layer 0 is recorded, not applied.** Every instance is parsed under **both**
+   the published and the extended grammar and both verdicts are recorded with the
+   error type. Layer 0 does **not** gate this run and no repair loop is entered:
+   this experiment measures single-pass schema synthesis, and gating would
+   confound it with repair. Disagreements between Layer 0's map and
+   `parseSchema`'s are counted and reported.
+
+4. **Gold standard.** `tables.json` from `taoyds/test-suite-sql-eval`, the Spider
+   authors' own evaluation repository, committed to `tests/spider/tables.json`.
+   The synthetic `*` column at index 0 of `column_names_original` is excluded.
+
+5. **Table matching — computed twice, reported separately.**
+   - *exact:* case-insensitive string equality.
+   - *normalised:* lowercased, underscores removed, and a trailing regular
+     plural (`-s`, `-es`) stripped from both sides, so gold `singer` matches
+     generated `singers`.
+
+6. **Column matching.** The same two rules, applied **only within a matched
+   table**. A column in an unmatched table is unmatched by construction.
+
+7. **Precision and recall.** Precision = matched ÷ generated. Recall = matched ÷
+   gold. Reported **macro** as the headline — computed per instance, then
+   averaged unweighted — because the unit of interest is a generated schema and
+   the subset ranges from 2 to 26 tables, so pooling would let the largest
+   schemas dominate. **Micro** (pooled across all instances) is reported
+   alongside. Instances that produce no parseable schema score 0 for recall and
+   are excluded from precision, since precision over zero generated elements is
+   undefined; the count of such instances is reported.
+
+8. **Foreign keys.** A gold foreign key is a directed
+   (table, column) → (table, column) pair. A generated key matches only when
+   **both** endpoints match under the table and column rules in force, and the
+   direction agrees.
+
+9. **Data types.** Scored only over matched columns. PostgreSQL types are mapped
+   to Spider's five categories:
+
+   | Spider category | PostgreSQL types |
+   | --- | --- |
+   | `number`  | INT, INTEGER, SMALLINT, BIGINT, SERIAL, BIGSERIAL, NUMERIC, DECIMAL, REAL, FLOAT, DOUBLE PRECISION, MONEY |
+   | `text`    | CHAR, VARCHAR, CHARACTER, CHARACTER VARYING, TEXT, UUID, and user-defined ENUM types |
+   | `time`    | DATE, TIME, TIMESTAMP, TIMESTAMPTZ, INTERVAL |
+   | `boolean` | BOOLEAN, BOOL |
+   | `others`  | everything else, including JSON, JSONB and array types |
+
+   Type accuracy = matched columns whose mapped category equals the gold
+   category ÷ matched columns.
+
+10. **3NF is dropped from metric 1.** §2.8 promised "correctly generated 3NF
+    tables". Spider's schemas carry no normalisation guarantee, so they cannot
+    serve as a 3NF gold standard, and scoring against them for it would measure
+    nothing. The claim is removed from the metric and §2.8 must say why. Agent
+    1's 3NF instruction remains in its system prompt as a design choice; it is
+    simply not a scored quantity.
+
+### Technical limitations
+
+1. **The subset is alphabetical, so it spans `academic` to `musical` only.** The
+   rule is reproducible and was fixed in advance, but the domain coverage is
+   incidental rather than engineered, and the second half of the alphabet is
+   absent. A random sample under a fixed seed would have been equally
+   reproducible and more representative; this is a weakness of the rule chosen,
+   stated rather than hidden.
+
+2. **Recall is bounded by what five questions can imply.** A gold table nothing
+   in the five questions touches cannot reasonably be inferred, so recall is
+   measuring inference from a partial specification, not omission by the model.
+   The number will look low and must be read that way.
+
+3. **Normalised matching will over-credit in at least one direction.** Stripping
+   a trailing `s` conflates a genuine plural with a distinct name — gold
+   `address` versus generated `addres` would match. Reporting exact alongside
+   normalised is what makes the size of that effect visible.
+
+4. **The type mapping is mine, not Spider's.** Spider does not publish a
+   PostgreSQL-to-category mapping, so the table above is a judgement. It is
+   fixed here before the run so it cannot be tuned toward a better number.

@@ -1,0 +1,607 @@
+{
+  "rule": "Humanised db_id (underscores to spaces, trailing numeric suffix removed) followed by the first five Spider questions for that database in dataset order. Databases with no questions in the distributed dataset receive the db_id sentence alone and are flagged.",
+  "questionSource": "xlangai/spider train and validation splits via the Hugging Face datasets-server rows endpoint",
+  "fallbackCount": 3,
+  "descriptions": [
+    {
+      "db_id": "academic",
+      "questionCount": 0,
+      "fallback": true,
+      "description": "Design the database schema for academic."
+    },
+    {
+      "db_id": "activity_1",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for activity. The system must be able to answer questions such as: How many faculty do we have? What is the total number of faculty members? What ranks do we have for faculty? Find the list of distinct ranks for faculty. Show all the distinct buildings that have faculty rooms."
+    },
+    {
+      "db_id": "aircraft",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for aircraft. The system must be able to answer questions such as: How many aircrafts are there? What is the number of aircraft? List the description of all aircrafts. What are the descriptions for the aircrafts? What is the average number of international passengers of all airports?"
+    },
+    {
+      "db_id": "allergy_1",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for allergy. The system must be able to answer questions such as: How many allergies are there? How many allergy entries are there? How many different allergy types exist? How many distinct allergies are there? Show all allergy types."
+    },
+    {
+      "db_id": "apartment_rentals",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for apartment rentals. The system must be able to answer questions such as: How many apartment bookings are there in total? Count the total number of apartment bookings. Show the start dates and end dates of all the apartment bookings. What are the start date and end date of each apartment booking? Show all distinct building descriptions."
+    },
+    {
+      "db_id": "architecture",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for architecture. The system must be able to answer questions such as: How many architects are female? List the name, nationality and id of all male architects ordered by their names lexicographically. What is the maximum length in meters for the bridges and what are the architects' names? What is the average length in feet of the bridges? What are the names and year of construction for the mills of 'Grondzeiler' type?"
+    },
+    {
+      "db_id": "assets_maintenance",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for assets maintenance. The system must be able to answer questions such as: Which assets have 2 parts and have less than 2 fault logs? List the asset id and detail. How many assets does each maintenance contract contain? List the number and the contract id. How many assets does each third party company supply? List the count and the company id. Which third party companies have at least 2 maintenance engineers or have at least 2 maintenance contracts? List the company id and name. What is the name and id of the staff who recorded the fault log but has not contacted any visiting engineers?"
+    },
+    {
+      "db_id": "baseball_1",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for baseball. The system must be able to answer questions such as: what is the full name and id of the college with the largest number of baseball players? Find the full name and id of the college that has the most baseball players. What is average salary of the players in the team named 'Boston Red Stockings' ? Compute the average salary of the players in the team called 'Boston Red Stockings'. What are first and last names of players participating in all star game in 1998?"
+    },
+    {
+      "db_id": "battle_death",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for battle death. The system must be able to answer questions such as: How many ships ended up being 'Captured'? List the name and tonnage ordered by in descending alphaetical order for the names. List the name, date and result of each battle. What is maximum and minimum death toll caused each time? What is the average number of injuries caused each time?"
+    },
+    {
+      "db_id": "behavior_monitoring",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for behavior monitoring. The system must be able to answer questions such as: How many assessment notes are there in total? What are the dates of the assessment notes? How many addresses have zip code 197? How many distinct incident type codes are there? Return all distinct detention type codes."
+    },
+    {
+      "db_id": "bike_1",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for bike. The system must be able to answer questions such as: Give me the dates when the max temperature was higher than 85. What are the dates with a maximum temperature higher than 85? What are the names of stations that have latitude lower than 37.5? What are the names of all stations with a latitude smaller than 37.5? For each city, return the highest latitude among its stations."
+    },
+    {
+      "db_id": "body_builder",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for body builder. The system must be able to answer questions such as: How many body builders are there? List the total scores of body builders in ascending order. List the snatch score and clean jerk score of body builders in ascending order of snatch score. What is the average snatch score of body builders? What are the clean and jerk score of the body builder with the highest total score?"
+    },
+    {
+      "db_id": "book_2",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for book. The system must be able to answer questions such as: How many books are there? List the writers of the books in ascending alphabetical order. List the titles of the books in ascending order of issues. What are the titles of the books whose writer is not \"Elaine Lee\"? What are the title and issues of the books?"
+    },
+    {
+      "db_id": "browser_web",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for browser web. The system must be able to answer questions such as: How many main stream browsers whose market share is at least 5 exist? List the name of browsers in descending order by market share. List the ids, names and market shares of all browsers. What is the maximum, minimum and average market share of the listed browsers? What is the id and market share of the browser Safari?"
+    },
+    {
+      "db_id": "candidate_poll",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for candidate poll. The system must be able to answer questions such as: How many candidates are there? Count the number of candidates. Which poll resource provided the most number of candidate information? Return the poll resource associated with the most candidates. what are the top 3 highest support rates?"
+    },
+    {
+      "db_id": "car_1",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for car. The system must be able to answer questions such as: How many continents are there? What is the number of continents? How many countries does each continent have? List the continent id, continent name and the number of countries. For each continent, list its id, name, and how many countries it has? How many countries are listed?"
+    },
+    {
+      "db_id": "chinook_1",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for chinook. The system must be able to answer questions such as: How many albums are there? Find the number of albums. List the names of all music genres. What are the names of different music genres? Find all the customer information in state NY."
+    },
+    {
+      "db_id": "cinema",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for cinema. The system must be able to answer questions such as: Show all the locations where no cinema has capacity over 800. Show all the locations where some cinemas were opened in both year 2010 and year 2011. How many cinema do we have? Count the number of cinemas. Show name, opening year, and capacity for each cinema."
+    },
+    {
+      "db_id": "city_record",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for city record. The system must be able to answer questions such as: What is id of the city that hosted events in the most recent year? Find the city that hosted some events in the most recent year. What is the id of this city? Find the match ids of the cities that hosted competition \"1994 FIFA World Cup qualification\"? What is the match id of the competition called \"1994 FIFA World Cup qualification\"? Find the cities which were once a host city after 2010?"
+    },
+    {
+      "db_id": "climbing",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for climbing. The system must be able to answer questions such as: How many climbers are there? Count the number of climbers. List the names of climbers in descending order of points. What are the names of the climbers, ordered by points descending? List the names of climbers whose country is not Switzerland."
+    },
+    {
+      "db_id": "club_1",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for club. The system must be able to answer questions such as: How many clubs are there? Count the total number of clubs. What are the names of all clubs? Give me the name of each club. How many students are there?"
+    },
+    {
+      "db_id": "coffee_shop",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for coffee shop. The system must be able to answer questions such as: How many members have the black membership card? Find the number of members living in each address. Give me the names of members whose address is in Harford or Waterbury. Find the ids and names of members who are under age 30 or with black membership card. Find the purchase time, age and address of each member, and show the results in the order of purchase time."
+    },
+    {
+      "db_id": "college_1",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for college. The system must be able to answer questions such as: Find the number of professors in accounting department. How many professors are in the accounting dept? How many professors are teaching class with code ACCT-211? How many professors teach a class with the code ACCT-211? What is the first and last name of the professor in biology department?"
+    },
+    {
+      "db_id": "college_2",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for college. The system must be able to answer questions such as: Find the buildings which have rooms with capacity more than 50. What are the distinct buildings with capacities of greater than 50? Count the number of rooms that are not in the Lamberton building. How many classrooms are not in Lamberton? What is the name and building of the departments whose budget is more than the average budget?"
+    },
+    {
+      "db_id": "college_3",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for college. The system must be able to answer questions such as: How many courses are there in total? Count the number of courses. How many courses have more than 2 credits? Count the number of courses with more than 2 credits. List all names of courses with 1 credit?"
+    },
+    {
+      "db_id": "company_1",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for company. The system must be able to answer questions such as: List all department names ordered by their starting date. find all dependent names who have a spouse relation with some employee. how many female dependents are there? Find the names of departments that are located in Houston. Return the first names and last names of employees who earn more than 30000 in salary."
+    },
+    {
+      "db_id": "company_employee",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for company employee. The system must be able to answer questions such as: How many companies are headquartered in the US? List the names of companies by ascending number of sales. What are the headquarters and industries of all companies? Show the names of companies in the banking or retailing industry? What is the maximum and minimum market value of companies?"
+    },
+    {
+      "db_id": "company_office",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for company office. The system must be able to answer questions such as: How many companies are there? Count the number of companies. List the names of companies in descending order of market value. Sort the company names in descending order of the company's market value. What are the names of companies whose headquarters are not \"USA\"?"
+    },
+    {
+      "db_id": "concert_singer",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for concert singer. The system must be able to answer questions such as: How many singers do we have? What is the total number of singers? Show name, country, age for all singers ordered by age from the oldest to the youngest. What are the names, countries, and ages for every singer in descending order of age? What is the average, minimum, and maximum age of all singers from France?"
+    },
+    {
+      "db_id": "county_public_safety",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for county public safety. The system must be able to answer questions such as: How many counties are there? Count the number of countries. List the names of counties in descending order of population. What are the names of the counties of public safety, ordered by population descending? List the distinct police forces of counties whose location is not on east side."
+    },
+    {
+      "db_id": "course_teach",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for course teach. The system must be able to answer questions such as: How many teachers are there? What is the total count of teachers? List the names of teachers in ascending order of age. What are the names of the teachers ordered by ascending age? What are the age and hometown of teachers?"
+    },
+    {
+      "db_id": "cre_Doc_Control_Systems",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for cre Doc Control Systems. The system must be able to answer questions such as: What document status codes do we have? What is the description of document status code 'working'? What document type codes do we have? What is the description of document type 'Paper'? What are the shipping agent names?"
+    },
+    {
+      "db_id": "cre_Doc_Template_Mgt",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for cre Doc Template Mgt. The system must be able to answer questions such as: How many documents do we have? Count the number of documents. List document IDs, document names, and document descriptions for all documents. What are the ids, names, and descriptions for all documents? What is the document name and template id for document with description with the letter 'w' in it?"
+    },
+    {
+      "db_id": "cre_Doc_Tracking_DB",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for cre Doc Tracking DB. The system must be able to answer questions such as: How many calendar items do we have? Count the number of all the calendar items. Show all calendar dates and day Numbers. What are all the calendar dates and day Numbers? Show the number of document types."
+    },
+    {
+      "db_id": "cre_Docs_and_Epenses",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for cre Docs and Epenses. The system must be able to answer questions such as: How many accounts do we have? Count the number of accounts. Show all account ids and account details. What are the ids and details of all accounts? How many statements do we have?"
+    },
+    {
+      "db_id": "cre_Drama_Workshop_Groups",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for cre Drama Workshop Groups. The system must be able to answer questions such as: How many bookings do we have? Count the total number of bookings made. List the order dates of all the bookings. What is the order date of each booking? Show all the planned delivery dates and actual delivery dates of bookings."
+    },
+    {
+      "db_id": "cre_Theme_park",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for cre Theme park. The system must be able to answer questions such as: How many available hotels are there in total? Find the total number of available hotels. What are the price ranges of hotels? Tell me the price ranges for all the hotels. Show all distinct location names."
+    },
+    {
+      "db_id": "csu_1",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for csu. The system must be able to answer questions such as: Report the name of all campuses in Los Angeles county. What campuses are located in the county of Los Angeles? What are the names of all campuses located at Chico? What campuses are located in Chico? Find all the campuses opened in 1958."
+    },
+    {
+      "db_id": "culture_company",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for culture company. The system must be able to answer questions such as: How many book clubs are there? Count the number of book clubs. show the titles, and authors or editors for all books made after the year 1989. What are the titles and authors or editors that correspond to books made after 1989? Show all distinct publishers for books."
+    },
+    {
+      "db_id": "customer_complaints",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for customer complaints. The system must be able to answer questions such as: How many customers are there? Count the number of customers. Find the emails and phone numbers of all the customers, ordered by email address and phone number. What are the emails and phone numbers of all customers, sorted by email address and phone number? Which city has the least number of customers whose type code is \"Good Credit Rating\"?"
+    },
+    {
+      "db_id": "customer_deliveries",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for customer deliveries. The system must be able to answer questions such as: Find the ids of orders whose status is 'Success'. Find the name and price of the product that has been ordered the greatest number of times. Find the number of customers in total. How many different payment methods are there? Show the details of all trucks in the order of their license number."
+    },
+    {
+      "db_id": "customers_and_addresses",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for customers and addresses. The system must be able to answer questions such as: Find the name of all customers. What are the names of all the customers? How many customers are there? Return the total number of distinct customers. What is the average amount of items ordered in each order?"
+    },
+    {
+      "db_id": "customers_and_invoices",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for customers and invoices. The system must be able to answer questions such as: Show the number of accounts. How many accounts are there? How many customers have opened an account? Count the number of customers who have an account. Show the id, the date of account opened, the account name, and other account detail for all accounts."
+    },
+    {
+      "db_id": "customers_and_products_contacts",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for customers and products contacts. The system must be able to answer questions such as: How many addresses are there in country USA? Show all distinct cities in the address record. Show each state and the number of addresses in each state. Show names and phones of customers who do not have address information. Show the name of the customer who has the most orders."
+    },
+    {
+      "db_id": "customers_campaigns_ecommerce",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for customers campaigns ecommerce. The system must be able to answer questions such as: How many premises are there? What are all the distinct premise types? Find the types and details for all premises and order by the premise type. Show each premise type and the number of premises in that type. Show all distinct product categories along with the number of mailshots in each category."
+    },
+    {
+      "db_id": "customers_card_transactions",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for customers card transactions. The system must be able to answer questions such as: How many accounts do we have? Count the number of accounts. Show ids, customer ids, names for all accounts. What are the account ids, customer ids, and account names for all the accounts? Show other account details for account with name 338."
+    },
+    {
+      "db_id": "debate",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for debate. The system must be able to answer questions such as: How many debates are there? List the venues of debates in ascending order of the number of audience. What are the date and venue of each debate? List the dates of debates with number of audience bigger than 150 Show the names of people aged either 35 or 36."
+    },
+    {
+      "db_id": "decoration_competition",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for decoration competition. The system must be able to answer questions such as: How many members are there? List the names of members in ascending alphabetical order. What are the names and countries of members? Show the names of members whose country is \"United States\" or \"Canada\". Show the different countries and the number of members from each."
+    },
+    {
+      "db_id": "department_management",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for department management. The system must be able to answer questions such as: How many heads of the departments are older than 56 ? List the name, born state and age of the heads of departments ordered by age. List the creation year, name and budget of each department. What are the maximum and minimum budget of the departments? What is the average number of employees of the departments whose rank is between 10 and 15?"
+    },
+    {
+      "db_id": "department_store",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for department store. The system must be able to answer questions such as: What are the ids of the top three products that were purchased in the largest amount? Give the ids of the three products purchased in the largest amounts. What are the product id and product type of the cheapest product? Give the id and product type of the product with the lowest price. Find the number of different product types."
+    },
+    {
+      "db_id": "device",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for device. The system must be able to answer questions such as: How many devices are there? Count the number of devices. List the carriers of devices in ascending alphabetical order. What are the different carriers for devices, listed in alphabetical order? What are the carriers of devices whose software platforms are not \"Android\"?"
+    },
+    {
+      "db_id": "document_management",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for document management. The system must be able to answer questions such as: Find the name and access counts of all documents, in alphabetic order of the document name. What are the names of all the documents, as well as the access counts of each, ordered alphabetically? Find the name of the document that has been accessed the greatest number of times, as well as the count of how many times it has been accessed? What is the name of the document which has been accessed the most times, as well as the number of times it has been accessed? Find the types of documents with more than 4 documents."
+    },
+    {
+      "db_id": "dog_kennels",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for dog kennels. The system must be able to answer questions such as: Which states have both owners and professionals living there? Find the states where both owners and professionals live. What is the average age of the dogs who have gone through any treatments? Find the average age of the dogs who went through treatments. Which professionals live in the state of Indiana or have done treatment on more than 2 treatments? List his or her id, last name and cell phone."
+    },
+    {
+      "db_id": "dorm_1",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for dorm. The system must be able to answer questions such as: Find the name of dorms only for female (F gender). What are the names of the all-female dorms? Find the name of dorms that can accommodate more than 300 students. What are the names of all the dorms that can accomdate more than 300 students? How many female students (sex is F) whose age is below 25?"
+    },
+    {
+      "db_id": "driving_school",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for driving school. The system must be able to answer questions such as: List all vehicle id What are the ids of all vehicles? How many vehicle in total? How many vehicles exist? Show the detail of vehicle with id 1."
+    },
+    {
+      "db_id": "e_government",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for e government. The system must be able to answer questions such as: List every individual's first name, middle name and last name in alphabetical order by last name. What are the first, middle, and last names of all individuals, ordered by last name? List all the types of forms. What are the different types of forms? Find the name of the most popular party form."
+    },
+    {
+      "db_id": "e_learning",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for e learning. The system must be able to answer questions such as: How many courses are there in total? Find the total number of courses offered. What are the descriptions of the courses with name \"database\"? Return the description for the courses named \"database\". What are the addresses of the course authors or tutors with personal name \"Cathrine\""
+    },
+    {
+      "db_id": "election",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for election. The system must be able to answer questions such as: How many counties are there in total? Count the total number of counties. Show the county name and population of all counties. What are the name and population of each county? Show the average population of all counties."
+    },
+    {
+      "db_id": "election_representative",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for election representative. The system must be able to answer questions such as: How many elections are there? List the votes of elections in descending order. List the dates and vote percents of elections. What are the minimum and maximum vote percents of elections? What are the names and parties of representatives?"
+    },
+    {
+      "db_id": "employee_hire_evaluation",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for employee hire evaluation. The system must be able to answer questions such as: How many employees are there? Count the number of employees Sort employee names by their age in ascending order. List the names of employees and sort in ascending order of age. What is the number of employees from each city?"
+    },
+    {
+      "db_id": "entertainment_awards",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for entertainment awards. The system must be able to answer questions such as: How many artworks are there? List the name of artworks in ascending alphabetical order. List the name of artworks whose type is not \"Program Talent Show\". What are the names and locations of festivals? What are the names of the chairs of festivals, sorted in ascending order of the year held?"
+    },
+    {
+      "db_id": "entrepreneur",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for entrepreneur. The system must be able to answer questions such as: How many entrepreneurs are there? Count the number of entrepreneurs. List the companies of entrepreneurs in descending order of money requested. What are the companies of entrepreneurs, ordered descending by amount of money requested? List the companies and the investors of entrepreneurs."
+    },
+    {
+      "db_id": "epinions_1",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for epinions. The system must be able to answer questions such as: Find the id of the item whose title is \"orange\". List all information in the item table. Find the number of reviews. How many users are there? Find the average and maximum rating of all reviews."
+    },
+    {
+      "db_id": "farm",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for farm. The system must be able to answer questions such as: How many farms are there? Count the number of farms. List the total number of horses on farms in ascending order. What is the total horses record for each farm, sorted ascending? What are the hosts of competitions whose theme is not \"Aliens\"?"
+    },
+    {
+      "db_id": "film_rank",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for film rank. The system must be able to answer questions such as: How many film are there? Count the number of films. List the distinct director of all films. What are the different film Directors? What is the average ticket sales gross in dollars of films?"
+    },
+    {
+      "db_id": "flight_1",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for flight. The system must be able to answer questions such as: How many aircrafts do we have? How many aircrafts exist in the database? Show name and distance for all aircrafts. What are the names and distances for all airplanes? Show ids for all aircrafts with more than 1000 distance."
+    },
+    {
+      "db_id": "flight_2",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for flight. The system must be able to answer questions such as: Which country does Airline \"JetBlue Airways\" belong to? What country is Jetblue Airways affiliated with? What is the abbreviation of Airline \"JetBlue Airways\"? Which abbreviation corresponds to Jetblue Airways? List all airline names and their abbreviations in \"USA\"."
+    },
+    {
+      "db_id": "flight_4",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for flight. The system must be able to answer questions such as: Find the name of the airport in the city of Goroka. What are the names of the airports in the city of Goroka? Find the name, city, country, and altitude (or elevation) of the airports in the city of New York. What is the name, city, country, and elevation for every airport in the city of New York? How many airlines are there?"
+    },
+    {
+      "db_id": "flight_company",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for flight company. The system must be able to answer questions such as: How many flights have a velocity larger than 200? List the vehicle flight number, date and pilot of all the flights, ordered by altitude. List the id, country, city and name of the airports ordered alphabetically by the name. What is maximum group equity shareholding of the companies? What is the velocity of the pilot named 'Thompson'?"
+    },
+    {
+      "db_id": "formula_1",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for formula. The system must be able to answer questions such as: What is the name of the race held most recently? What is the name of the race that occurred most recently? What is the name and date of the most recent race? What is the name and date of the race that occurred most recently? Find the names of all races held in 2017."
+    },
+    {
+      "db_id": "game_1",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for game. The system must be able to answer questions such as: How many video games exist? How many video games do you have? How many video game types exist? What is the count of different game types? Show all video game types."
+    },
+    {
+      "db_id": "game_injury",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for game injury. The system must be able to answer questions such as: How many games are held after season 2007? List the dates of games by the home team name in descending order. List the season, home team, away team of all the games. What are the maximum, minimum and average home games each stadium held? What is the average attendance of stadiums with capacity percentage higher than 100%?"
+    },
+    {
+      "db_id": "gas_company",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for gas company. The system must be able to answer questions such as: How many gas companies are there? What is the total number of companies? List the company name and rank for all companies in the decreasing order of their sales. What is the name and rank of every company ordered by descending number of sales? Show the company name and the main industry for all companies whose headquarters are not from USA."
+    },
+    {
+      "db_id": "geo",
+      "questionCount": 0,
+      "fallback": true,
+      "description": "Design the database schema for geo."
+    },
+    {
+      "db_id": "gymnast",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for gymnast. The system must be able to answer questions such as: How many gymnasts are there? Count the number of gymnasts. List the total points of gymnasts in descending order. What are the total points for all gymnasts, ordered by total points descending? List the total points of gymnasts in descending order of floor exercise points."
+    },
+    {
+      "db_id": "hospital_1",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for hospital. The system must be able to answer questions such as: Which department has the largest number of employees? Find the department with the most employees. What is the employee id of the head whose department has the least number of employees? Tell me the employee id of the head of the department with the least employees. what is the name and position of the head whose department has least number of employees?"
+    },
+    {
+      "db_id": "hr_1",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for hr. The system must be able to answer questions such as: Display the first name and department name for each employee. What are the first name and department name of all employees? List the full name (first and last name), and salary for those employees who earn below 6000. What are the full names and salaries for any employees earning less than 6000? Display the first name, and department number for all employees whose last name is \"McEwen\"."
+    },
+    {
+      "db_id": "icfp_1",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for icfp. The system must be able to answer questions such as: How many authors are there? Count the number of authors. How many institutions are there? Count the number of institutions. How many papers are published in total?"
+    },
+    {
+      "db_id": "imdb",
+      "questionCount": 0,
+      "fallback": true,
+      "description": "Design the database schema for imdb."
+    },
+    {
+      "db_id": "inn_1",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for inn. The system must be able to answer questions such as: Find the names of all modern rooms with a base price below $160 and two beds. What are the names of modern rooms that have a base price lower than $160 and two beds. Find all the rooms that have a price higher than 160 and can accommodate more than 2 people. Report room names and ids. What are the room names and ids of all the rooms that cost more than 160 and can accommodate more than two people. Find the most popular room in the hotel. The most popular room is the room that had seen the largest number of reservations."
+    },
+    {
+      "db_id": "insurance_and_eClaims",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for insurance and eClaims. The system must be able to answer questions such as: List the names of all the customers in alphabetical order. Sort the customer names in alphabetical order. Find all the policy type codes associated with the customer \"Dayana Robel\" What are the type codes of the policies used by the customer \"Dayana Robel\"? Which type of policy is most frequently used? Give me the policy type code."
+    },
+    {
+      "db_id": "insurance_fnol",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for insurance fnol. The system must be able to answer questions such as: Find all the phone numbers. What are all the phone numbers? What are the customer phone numbers under the policy \"Life Insurance\"? What are the phone numbers of customers using the policy with the code \"Life Insurance\"? Which policy type has the most records in the database?"
+    },
+    {
+      "db_id": "insurance_policies",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for insurance policies. The system must be able to answer questions such as: Which claims caused more than 2 settlements or have the maximum claim value? List the date the claim was made and the claim id. Find the claims that led to more than two settlements or have the maximum claim value. For each of them, return the date the claim was made and the id of the claim. Which customer had at least 2 policies but did not file any claims? List the customer details and id. Give me the the customer details and id for the customers who had two or more policies but did not file any claims. List the method, date and amount of all the payments, in ascending order of date."
+    },
+    {
+      "db_id": "journal_committee",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for journal committee. The system must be able to answer questions such as: How many editors are there? List the names of editors in ascending order of age. What are the names and ages of editors? List the names of editors who are older than 25. Show the names of editors of age either 24 or 25."
+    },
+    {
+      "db_id": "loan_1",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for loan. The system must be able to answer questions such as: How many bank branches are there? Count the number of bank branches. How many customers are there? What is the total number of customers across banks? Find the number of customers in the banks at New York City."
+    },
+    {
+      "db_id": "local_govt_and_lot",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for local govt and lot. The system must be able to answer questions such as: How many residents does each property have? List property id and resident count. What is the distinct service types that are provided by the organization which has detail 'Denesik and Sons Party'? How many services has each resident requested? List the resident id, details, and the count in descending order of the count. What is the maximum number that a certain service is provided? List the service id, details and number. List the id and type of each thing, and the details of the organization that owns it."
+    },
+    {
+      "db_id": "local_govt_in_alabama",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for local govt in alabama. The system must be able to answer questions such as: what are the event details of the services that have the type code 'Marriage'? What are the ids and details of events that have more than one participants? How many events have each participants attended? List the participant id, type and the number. What are all the the participant ids, type code and details? How many participants belong to the type 'Organizer'?"
+    },
+    {
+      "db_id": "local_govt_mdm",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for local govt mdm. The system must be able to answer questions such as: what are the details of the cmi masters that have the cross reference code 'Tax'? What is the cmi cross reference id that is related to at least one council tax entry? List the cross reference id and source system code. How many business rates are related to each cmi cross reference? List cross reference id, master customer id and the n What is the tax source system code related to the benefits and overpayments? List the code and the benifit id, order by benifit id. Wat is the tax source system code and master customer id of the taxes related to each parking fine id?"
+    },
+    {
+      "db_id": "machine_repair",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for machine repair. The system must be able to answer questions such as: How many technicians are there? What is the number of technicians? List the names of technicians in ascending order of age. What are the names of the technicians by ascending order of age? What are the team and starting year of technicians?"
+    },
+    {
+      "db_id": "manufactory_1",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for manufactory. The system must be able to answer questions such as: Who is the founder of Sony? Return the founder of Sony. Where is the headquarter of the company founded by James? What is the headquarter of the company whose founder is James? Find all manufacturers' names and their headquarters, sorted by the ones with highest revenue first."
+    },
+    {
+      "db_id": "manufacturer",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for manufacturer. The system must be able to answer questions such as: How many furniture components are there in total? Return the name and id of the furniture with the highest market rate. find the total market rate of the furnitures that have the top 2 market shares. Find the component amounts and names of all furnitures that have more than 10 components. Find the name and component amount of the least popular furniture."
+    },
+    {
+      "db_id": "match_season",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for match season. The system must be able to answer questions such as: How many countries are there in total? Count the number of countries. Show the country name and capital of all countries. What are the names and capitals of each country? Show all official native languages that contain the word \"English\"."
+    },
+    {
+      "db_id": "medicine_enzyme_interaction",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for medicine enzyme interaction. The system must be able to answer questions such as: How many kinds of enzymes are there? What is the total count of enzymes? List the name of enzymes in descending lexicographical order. What are the names of enzymes in descending order? List the names and the locations that the enzymes can make an effect."
+    },
+    {
+      "db_id": "mountain_photos",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for mountain photos. The system must be able to answer questions such as: How many camera lenses have a focal length longer than 15 mm? Find the brand and name for each camera lens, and sort in descending order of maximum aperture. List the id, color scheme, and name for all the photos. What are the maximum and average height of the mountains? What are the average prominence of the mountains in country 'Morocco'?"
+    },
+    {
+      "db_id": "movie_1",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for movie. The system must be able to answer questions such as: Find the titles of all movies directed by steven spielberg. What are the names of all movies directed by Steven Spielberg? What is the name of the movie produced after 2000 and directed by James Cameron? What are the titles of all movies that James Cameron directed after 2000? How many movies were made before 2000?"
+    },
+    {
+      "db_id": "museum_visit",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for museum visit. The system must be able to answer questions such as: How many visitors below age 30 are there? Find the names of the visitors whose membership level is higher than 4, and order the results by the level from high to low. What is the average age of the visitors whose membership level is not higher than 4? Find the name and membership level of the visitors whose membership level is higher than 4, and sort by their age from old to young. Find the id and name of the museum that has the most staff members?"
+    },
+    {
+      "db_id": "music_1",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for music. The system must be able to answer questions such as: What is the name of the song that was released in the most recent year? What is the name of the song that was released most recently? What is the id of the longest song? Find the id of the song that lasts the longest. Find the names of all English songs."
+    },
+    {
+      "db_id": "music_2",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for music. The system must be able to answer questions such as: How many bands are there? Find the number of bands. What are all the labels? What are the different album labels listed? Find all the albums in 2012."
+    },
+    {
+      "db_id": "music_4",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for music. The system must be able to answer questions such as: How many artists are there? Count the number of artists. List the age of all music artists. What are the ages of all music artists? What is the average age of all artists?"
+    },
+    {
+      "db_id": "musical",
+      "questionCount": 5,
+      "fallback": false,
+      "description": "Design the database schema for musical. The system must be able to answer questions such as: How many actors are there? Count the number of actors. List the name of actors in ascending alphabetical order. What are the names of actors, ordered alphabetically? What are the characters and duration of actors?"
+    }
+  ]
+}
