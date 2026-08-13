@@ -2277,3 +2277,68 @@ developer cares about, and Chapter IV should say both.
    585.4 s covers one Agent 1 generation and two Agent 2 generations. A fixture
    needing more repairs costs more, and the blog arm spent 111.4 s producing
    nothing at all.
+
+## Week 9 — 2026-08-13 — the web layer, and the first measurement of metric 4
+
+**Done:** `src/web/server.js` and `src/web/public/index.html`. Express and
+archiver, no framework, no persistence beyond the process. Objective 4 asks for
+generation, verification and download from natural-language input; this is that
+and nothing more.
+
+### Verified-or-nothing now holds at the HTTP boundary
+
+Demonstrated rather than asserted. The blog description reliably fails Layer 0,
+so it exercises the non-convergence path:
+
+```
+status   failed
+stage    Agent 1: unverified after 5 attempt(s)
+failedLayer  0
+download null
+
+GET /download/<id>  ->  HTTP 500
+{"error":"The pipeline did not converge; no verified artefacts exist",
+ "outcome":"unverified","failedLayer":0,
+ "detail":{"type":"UnexpectedToken", ...}}
+```
+
+No artefacts are written on a failed run, so the rollback §2.6.2 describes is
+structural rather than a deletion step: there is nothing to roll back because
+nothing was created. The download route refuses regardless of what the caller
+asks for, which is the point — the guarantee cannot be circumvented by
+requesting the URL directly.
+
+### Metric 4 is measurable for the first time
+
+§2.8 defines computational latency as wall-clock from ingestion of the
+natural-language input to serialisation of the output archive. Until this layer
+existed there was no archive, so the metric named a measurement nothing could
+take. The clock now starts when `POST /generate` accepts the description and
+stops when the ZIP has been written, and the figure is reported to the browser
+and in the job status.
+
+### Sandboxing, as §1.3 claims it
+
+Generated code is written to a temporary directory created per job, is never
+imported, executed or evaluated by the server, and leaves only as bytes in a
+download. That is the whole of the claim and the chapter should not imply more.
+
+### Technical limitations
+
+1. **A run takes minutes, so the browser polls.** `POST /generate` returns 202
+   with a job id immediately; holding the connection open would exceed ordinary
+   proxy timeouts and would make progress reporting impossible.
+
+2. **Jobs are in memory and die with the process.** Deliberate: a job store that
+   outlived the process would be a database of past runs, which the scope
+   explicitly excludes.
+
+3. **Cleanup is best-effort.** Temporary directories are removed on SIGINT. A
+   hard kill leaves them for the operating system.
+
+4. **`archiver` is pinned to 7.x.** Version 8 replaced the factory export with a
+   class API; 7.x is the documented interface and the one this uses.
+
+5. **The success path is demonstrated but not yet captured as evidence.** The
+   failure path above was exercised end to end; a converging run and its
+   screenshots remain outstanding.
