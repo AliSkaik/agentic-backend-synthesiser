@@ -242,6 +242,22 @@ function excerpt(source, line, column) {
 }
 
 function feedbackFor(error, source) {
+  // A scope violation is a different instruction from a syntax error. Telling a
+  // model its schema is malformed when the schema is fine and a query follows it
+  // sends it to repair something that is not broken, which is the misattribution
+  // problem this layer has already been caught doing once.
+  if (error.type === "ScopeViolation") {
+    return [
+      `Layer ${LAYER} (grammar): the response contains statements that are not schema definition.`,
+      `${error.message}, at line ${error.line}, column ${error.column}:`,
+      "",
+      excerpt(source, error.line, error.column),
+      "",
+      "The schema itself may be correct. Return only the schema definition:",
+      "CREATE statements alone, with no queries, no sample data and no prose.",
+    ].join("\n");
+  }
+
   return [
     `Layer ${LAYER} (grammar): the schema you returned is not well-formed DDL.`,
     `${error.message} at line ${error.line}, column ${error.column}:`,
@@ -318,6 +334,25 @@ class Parser {
   }
 }
 
+// Verbs that open a well-formed SQL statement which is nevertheless not schema
+// definition. Layer 0 asserts two separate properties: that each statement is
+// well formed, and that each statement belongs to the DDL subset. A response
+// failing the second is not malformed, it contains more than it should, and the
+// two are reported as different error types so they can be counted apart.
+//
+// This is still a purely syntactic test on the leading token of a statement. No
+// semantics, no model, so it stays inside the §2.4.3 constraint that Agent 3
+// evaluates artefacts against fixed formal rules.
+//
+// Dialect errors are deliberately NOT given a type of their own. Distinguishing
+// "valid in another dialect" from "malformed" would require that dialect's
+// grammar, and a type recognising one MySQL construct while missing others would
+// claim a generality it does not have. They remain UnexpectedToken.
+const NON_DDL_VERBS = new Set([
+  "SELECT", "INSERT", "UPDATE", "DELETE", "MERGE", "WITH",
+  "EXPLAIN", "ANALYZE", "VACUUM", "BEGIN", "COMMIT", "ROLLBACK", "CALL",
+]);
+
 // <ddl_script> ::= <create_table_stmt> { <create_table_stmt> }
 function parseScript(parser) {
   if (parser.atEof()) {
@@ -325,6 +360,17 @@ function parseScript(parser) {
   }
 
   while (!parser.atEof()) {
+    // Subset membership is checked in BOTH grammars, before either dispatches,
+    // so the classification never depends on which grammar is in force and the
+    // published/extended comparison is unaffected.
+    const token = parser.peek();
+    if (token.type === "identifier" && NON_DDL_VERBS.has(token.value.toUpperCase())) {
+      return parser.fail(
+        "ScopeViolation",
+        `"${token.value.toUpperCase()}" opens a valid SQL statement that is not schema definition`
+      );
+    }
+
     // The extended grammar admits CREATE TYPE ... AS ENUM, which both real
     // fixtures open with. The published grammar has no production for it, so
     // under `published` this falls through to parseCreateTable and fails there

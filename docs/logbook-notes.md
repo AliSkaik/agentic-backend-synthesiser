@@ -1698,3 +1698,79 @@ show what was inspected before committing to the full run.
 3. **The baseline is weaker than expert prompting by construction**, per the
    argument above. It is a control for the harness, not a claim about the best a
    single prompt can do.
+
+## Week 9 — 2026-08-13 — Layer 0 reports scope violations as their own class
+
+**Done:** a `ScopeViolation` error type in `src/agents/grammarVerifier.js`, and
+the 100 committed Spider schemas re-classified without regenerating any of them.
+
+**Acceptance is unchanged at 45 of 100.** Nothing that failed now passes. Only
+the classification of the 55 rejections moved:
+
+| verdict | count |
+| --- | --- |
+| accepted | 45 |
+| `ScopeViolation` | **53** |
+| `UnclosedParenthesis` | 2 |
+
+### Why the old taxonomy was wrong
+
+53 schemas carried trailing `SELECT` or `INSERT` statements. Their `CREATE TABLE`
+definitions are well formed and complete; the offending statements follow them.
+Reporting that as a syntax error misdescribes the artefact and, worse, produces a
+critique telling the model its schema is malformed when the schema is fine. That
+sends Agent 1 to repair something that is not broken — the same misattribution
+this layer was already caught making with unrecognised constructs.
+
+The feedback string for a scope violation now says the schema itself may be
+correct and asks for the definitions alone.
+
+### Layer 0 asserts two properties, not one
+
+This is the substantive change and it belongs in §2.5.1 alongside the
+productions, not only in Chapter III:
+
+1. **Well-formedness** — each statement parses under the grammar.
+2. **Subset membership** — each statement belongs to the DDL subset.
+
+A response failing the second is not malformed; it contains more than it should.
+Both are purely syntactic, deterministic tests on the token stream — the check is
+on a statement's leading keyword — so the layer stays inside §2.4.3's constraint
+that Agent 3 evaluates artefacts against fixed formal rules and never reasons
+about meaning.
+
+The check runs in both grammars before either dispatches, so the
+published-versus-extended comparison is unaffected.
+
+### A warning verdict was considered and rejected
+
+The obvious alternative was to let a schema with a trailing query pass with a
+warning attached. That would make `passed: true` mean "passed, mostly", which is
+the false-pass class this component exists to prevent, and the same defect as
+`node --check` reporting success on a module that would not run.
+
+This is now the third independent decision settled by the same principle: the
+field is `passed` and not `verified` at Layer 1; exhaustion emits nothing rather
+than a best candidate; and a scope violation fails rather than warns. Worth
+pointing at once in Chapter V as a single principle applied consistently rather
+than three separate choices.
+
+### Technical limitations
+
+1. **Dialect errors are not given a type of their own, deliberately.**
+   Distinguishing "valid in another dialect" from "malformed" requires that
+   dialect's grammar. A type recognising the one observed MySQL construct while
+   missing every other would claim a capability the layer does not have.
+
+2. **Those two cases are reported as `UnclosedParenthesis`, which is not what
+   they are.** `total INT AS (a + b) STORED` is MySQL's generated-column syntax;
+   PostgreSQL requires `GENERATED ALWAYS AS (...) STORED`. The parser stops
+   recognising column definitions at the unknown construct, so the closing
+   parenthesis becomes unreachable and the error surfaces there. The type is
+   correct about the parser's state and wrong about the cause, and the chapter
+   must say so rather than let the label stand as a description.
+
+3. **The verb list is finite and lexical.** `SELECT`, `INSERT`, `UPDATE`,
+   `DELETE`, `MERGE`, `WITH`, `EXPLAIN`, `ANALYZE`, `VACUUM`, `BEGIN`, `COMMIT`,
+   `ROLLBACK`, `CALL`. A non-DDL statement opening with anything else would fall
+   through to the ordinary parse and be reported as malformed.

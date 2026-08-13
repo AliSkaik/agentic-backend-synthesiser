@@ -239,6 +239,57 @@ for (const [name, ddl] of foundBySpiderRun) {
   check(`published still rejects ${name}`, verifyGrammar(ddl, { grammar: "published" }).passed === false);
 }
 
+// ---------------------------------------------------------------------------
+// ScopeViolation: valid SQL that is not schema definition
+// ---------------------------------------------------------------------------
+//
+// 53 of 100 Spider schemas carried trailing queries or sample data. Those are
+// well-formed statements that do not belong to the DDL subset, and reporting
+// them as UnexpectedToken conflates "the response contains more than it should"
+// with "the response is malformed". The gate does not soften: these still fail.
+
+const scopeViolations = [
+  ["trailing SELECT", "CREATE TABLE a (id INT);\nSELECT COUNT(*) FROM a;"],
+  ["trailing INSERT", "CREATE TABLE a (id INT);\nINSERT INTO a VALUES (1);"],
+  ["trailing UPDATE", "CREATE TABLE a (id INT);\nUPDATE a SET id = 2;"],
+  ["trailing DELETE", "CREATE TABLE a (id INT);\nDELETE FROM a;"],
+  ["a CTE query", "CREATE TABLE a (id INT);\nWITH x AS (SELECT 1) SELECT * FROM x;"],
+  ["EXPLAIN", "CREATE TABLE a (id INT);\nEXPLAIN SELECT * FROM a;"],
+  ["a leading SELECT", "SELECT 1;"],
+];
+
+for (const [name, ddl] of scopeViolations) {
+  for (const grammar of ["extended", "published"]) {
+    const result = verifyGrammar(ddl, { grammar });
+    check(
+      `${grammar}: ${name} is a ScopeViolation`,
+      result.passed === false && result.error.type === "ScopeViolation",
+      `passed=${result.passed} type=${result.error?.type}`
+    );
+  }
+  const feedback = verifyGrammar(ddl, { grammar: "extended" }).feedback;
+  check(
+    `  ${name} feedback names the real problem`,
+    /not schema definition|only the schema/i.test(feedback),
+    feedback.split("\n")[0]
+  );
+}
+
+// A dialect error is NOT reclassified. The parser cannot distinguish "valid in
+// another dialect" from "malformed" without that dialect's grammar, and a
+// DialectError type that recognised this one MySQL construct and no others
+// would claim a generality it does not have. Both Spider cases stay
+// UnexpectedToken, and the chapter says so.
+{
+  const mysql = "CREATE TABLE s (\n    a INT,\n    b INT,\n    total INT AS (a + b) STORED\n);";
+  const result = verifyGrammar(mysql, { grammar: "extended" });
+  check(
+    "MySQL generated-column syntax stays UnexpectedToken, not ScopeViolation",
+    result.passed === false && result.error.type !== "ScopeViolation",
+    `type=${result.error?.type}`
+  );
+}
+
 // The gate must not be widened into uselessness. These stay rejected.
 const stillRejected = [
   // The Spider descriptions ask questions, and the model sometimes answers them
