@@ -76,9 +76,9 @@ arriving by a different route.
 
 **False-failure rate on this sample: 3 of 8 (37.5%).**
 
-## Why this stopped WP2
+## Why this stopped the Spider evaluation
 
-WP2 records the Layer 0 verdict per instance across 100 Spider schemas and, if
+The Spider evaluation records the Layer 0 verdict per instance across 100 schemas and, if
 Layer 0 gates the run, sends failures into an Agent 1 repair loop. At this rate
 roughly a third of instances would be re-prompted to correct SQL that was
 already correct, at ~20 s per attempt, and the resulting mean-iterations-to-
@@ -91,7 +91,7 @@ thing.
 
 5 431 ms to 47 748 ms per generation; `c1-blog` ran first and carries the cold
 start. The spread is far wider than the 4 724 ms warm median recorded in Week 7,
-and WP2's "8–10 minutes for 100 instances" estimate is built on that median. At
+and the "8–10 minutes for 100 instances" estimate is built on that median. At
 a ~20 s mean this run implies **over half an hour** for the Spider generation
 pass alone, before any repair loops.
 

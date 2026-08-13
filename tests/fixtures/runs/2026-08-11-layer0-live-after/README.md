@@ -75,9 +75,9 @@ carrying the cold start, and the rest moved by under 2%. Identical bytes with
 different wall time is the same observation Week 7 recorded in reverse: timing
 and decoding are independent, and neither proves the other.
 
-## Correction to the WP2 latency estimate
+## Correction to the latency estimate
 
-The delivery plan estimates 8–10 minutes for 100 Spider instances, derived from
+The working estimate for 100 Spider instances was 8–10 minutes, derived from
 the 4 724 ms warm median in Week 7. These eight descriptions average **17.3 s**
 including a cold start, or **14.2 s** excluding it — the Week 7 median came from
 a one-table `users` prompt, and realistic multi-table descriptions cost three

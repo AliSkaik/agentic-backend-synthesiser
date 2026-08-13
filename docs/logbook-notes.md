@@ -1456,3 +1456,134 @@ so the weaker prompt is visible rather than averaged away.
 4. **The type mapping is mine, not Spider's.** Spider does not publish a
    PostgreSQL-to-category mapping, so the table above is a judgement. It is
    fixed here before the run so it cannot be tuned toward a better number.
+
+## Week 9 — 2026-08-12 — the 100-instance Spider run
+
+**Done:** the full evaluation, scored against the specification committed in
+`2350a89` before any instance was generated. Artefacts in
+`tests/spider/run-2026-08-12/`: 100 generated schemas and `results.json` with a
+per-instance record. 100 instances, **52.9 minutes** wall clock.
+
+### Schema correctness
+
+Macro is the headline figure — computed per instance, then averaged unweighted,
+per specification item 7. Micro is pooled across all instances.
+
+| | tables P | tables R | columns P | columns R | FK P | FK R |
+| --- | --- | --- | --- | --- | --- | --- |
+| **normalised, macro** | **55.2%** | **31.0%** | **28.9%** | **11.4%** | **5.7%** | **1.9%** |
+| normalised, micro | 50.0% | 25.3% | 25.0% | 8.0% | 5.2% | 1.8% |
+| exact, macro | 36.2% | 19.4% | 14.9% | 5.5% | 3.8% | 1.1% |
+| exact, micro | 33.7% | 17.0% | 12.9% | 4.2% | 3.1% | 1.1% |
+
+Type accuracy over matched columns: **93.0%** normalised, 93.6% exact.
+
+Every instance produced a parseable schema; none returned nothing. Layer 0's
+structural map and Layer 2's lexical reader disagreed on **zero** of 100
+schemas, which is the first evidence for that agreement at scale rather than on
+two fixtures.
+
+**Naming convention accounts for roughly nineteen points of table precision.**
+The gap between exact and normalised — 36.2% against 55.2% — is entirely
+singular/plural and underscore variation. That is a measurement of surface form,
+not of design, and reporting only one of the two figures would have misdescribed
+the result in whichever direction was chosen.
+
+**Foreign keys are where the model fails hardest.** 1.9% recall means the
+relational structure of the gold schema is essentially not reproduced, even
+where individual tables are. The model tends to invent its own linking tables:
+on `aircraft` it produced a `flight` table where gold has `match` and
+`airport_aircraft`, so every gold key is unmatchable by construction even though
+two of five tables matched.
+
+**Type accuracy is high and should not be read as encouraging.** 93% is computed
+over *matched* columns only, and only 11.4% of gold columns match. It says that
+when the model finds the right column it usually gives it a sensible type; it
+says nothing about the 88.6% it does not find.
+
+### The three fallback instances behaved exactly as predicted
+
+`academic`, `geo` and `imdb` received the db_id sentence alone because the
+distributed dataset carries no questions for them.
+
+| | table recall |
+| --- | --- |
+| the 3 fallback instances | **4.2%** |
+| the other 97 | **31.8%** |
+
+Keeping them in the sample and reporting them separately was the right call:
+averaging them in would have depressed the headline by a cause that has nothing
+to do with the model.
+
+### Layer 0: the published grammar accepts nothing, at n=100
+
+**0 of 100.** The 0/2 and 0/8 readings hold at scale. This is the figure Chapter
+IV should cite.
+
+The extended grammar accepted **35 of 100 as run**. Reading the 65 rejections —
+which specification item 3 required rather than counting them — gave:
+
+| cause | count | verdict |
+| --- | --- | --- |
+| `SELECT` statements appended to the schema | 45 | legitimate |
+| dollar-quoted `CREATE FUNCTION` bodies | 13 | false failure |
+| `INSERT` statements supplying sample data | 5 | legitimate |
+| `ON DELETE CASCADE` / `SET NULL` | 2 | false failure |
+
+15 false failures. The grammar was extended for dollar quoting and referential
+actions, and **Layer 0 was re-evaluated over the same committed schemas — no
+instance was regenerated**, which is why the runner writes every schema to disk
+before scoring anything.
+
+**Re-scored: 45 of 100 accepted, and every one of the 55 remaining rejections is
+legitimate.** 48 `SELECT`, 5 `INSERT`, and two cases of
+`total INT AS (a + b) STORED` — MySQL generated-column syntax, which PostgreSQL
+spells `GENERATED ALWAYS AS (...) STORED` and will not execute as written.
+
+### Two findings that only this layer could produce
+
+**The model answers the questions it is shown.** 53 of 100 schemas carried
+`SELECT` or `INSERT` statements alongside the DDL. Agent 1's system prompt says
+DDL only; the description says *"the system must be able to answer questions such
+as…"* and the model obliges by writing the queries. This is a direct consequence
+of the input construction chosen in the specification, and it is a measurable
+instruction-following failure: **a competing instruction in the user prompt beat
+an explicit prohibition in the system prompt on more than half of all
+instances**.
+
+**Dialect leakage.** Two schemas used MySQL syntax. Nothing else in the pipeline
+would have noticed: Layer 2 reads column names and would have found them
+present, and Layer 1 never sees the DDL. The schema would have reached Agent 2,
+which would have written correct routes against a table that cannot be created.
+
+### Technical limitations
+
+1. **The re-scored 45/100 is not an independent figure.** The grammar was
+   extended using the failures of the sample it is then measured against, which
+   is the same objection recorded after the eight-description probe. **35/100 is
+   the independent number**; 45/100 describes a parser fitted to this sample.
+   Only a fresh sample can produce another honest reading.
+
+2. **Rejecting a script for its trailing SELECT discards usable schema.** In most
+   of those 53 cases the `CREATE TABLE` statements are well formed and the
+   offending statements follow them. Layer 0 fails the whole script, so as a gate
+   it would send Agent 1 to regenerate output that was largely correct. Whether
+   the gate should reject or strip is a design question this run raises and does
+   not settle; stripping would be a verifier modifying an artefact, which
+   §2.4.3 forbids.
+
+3. **Recall measures inference from five questions, not omission.** A gold table
+   that none of the five questions touches cannot reasonably be inferred. 31%
+   table recall is a statement about a partial specification, and reading it as
+   "the model missed 69% of the schema" would be wrong.
+
+4. **The subset is alphabetical and covers `academic` to `musical` only**, as
+   recorded before the run. Nothing in the second half of the alphabet is
+   represented.
+
+5. **The latency estimate has now been wrong twice.** The first estimate was
+   8–10 minutes, the probe-based correction said 25–30, and the run took **52.9
+   minutes** — mean 31.7 s per instance, median 28.4 s, range 6.9 s to 80.0 s.
+   Multi-table schemas cost far more than the eight-description probe implied,
+   and any future estimate should be built from this figure rather than from either
+   earlier one.
