@@ -9,7 +9,7 @@
 // Every generated schema is written to disk before anything is scored, so a
 // scoring change never requires regeneration. That is deliberate the run costs
 // ~25 minutes and the scorer is the part most likely to need a second pass.
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { synthesiseSchema } from "../agents/schemaSynthesiser.js";
 import { verifyGrammar } from "../agents/grammarVerifier.js";
 import { parseSchema } from "../agents/relationalValidator.js";
@@ -25,6 +25,16 @@ function arg(name, fallback) {
 const limit = Number(arg("--limit", "0")) || Infinity;
 const outDir = arg("--out", `${ROOT}tests/spider/run-${new Date().toISOString().slice(0, 10)}`);
 
+// --resume reuses any schema already on disk instead of regenerating it.
+//
+// A long unattended run has no business being all-or-nothing. Generation is the
+// only expensive step and it is deterministic, so a schema already written is
+// exactly the schema a regeneration would produce; re-reading it is not a
+// shortcut, it is the same value obtained for free. An interruption at any point
+// therefore costs at most the instance in flight, and the run can be split
+// across as many sittings as convenient without changing the result.
+const resume = process.argv.includes("--resume");
+
 mkdirSync(`${outDir}/generated`, { recursive: true });
 
 const tables = JSON.parse(readFileSync(`${ROOT}tests/spider/tables.json`, "utf8"));
@@ -37,19 +47,29 @@ const started = performance.now();
 for (const [index, item] of descriptions.slice(0, limit).entries()) {
   const gold = goldSchema(byId.get(item.db_id));
 
+  const path = `${outDir}/generated/${item.db_id}.sql`;
+  const reused = resume && existsSync(path);
+
   const t0 = performance.now();
   let ddl = null;
   let error = null;
-  try {
-    ddl = await synthesiseSchema(item.description);
-  } catch (err) {
-    error = { type: err?.type ?? err?.name ?? "Error", message: err?.message ?? String(err) };
+  if (reused) {
+    ddl = readFileSync(path, "utf8");
+  } else {
+    try {
+      ddl = await synthesiseSchema(item.description);
+    } catch (err) {
+      error = { type: err?.type ?? err?.name ?? "Error", message: err?.message ?? String(err) };
+    }
   }
-  const latencyMs = Math.round(performance.now() - t0);
+  // A reused schema has no latency of its own; recording the read time would
+  // corrupt the mean. Null is carried through and excluded from the aggregate.
+  const latencyMs = reused ? null : Math.round(performance.now() - t0);
 
   const record = {
     db_id: item.db_id,
     fallbackDescription: item.fallback,
+    reused,
     latencyMs,
     chars: ddl?.length ?? null,
     error,
@@ -57,7 +77,7 @@ for (const [index, item] of descriptions.slice(0, limit).entries()) {
   };
 
   if (ddl !== null) {
-    writeFileSync(`${outDir}/generated/${item.db_id}.sql`, ddl);
+    if (!reused) writeFileSync(path, ddl);
 
     const extended = verifyGrammar(ddl, { grammar: "extended" });
     const published = verifyGrammar(ddl, { grammar: "published" });
@@ -89,7 +109,7 @@ for (const [index, item] of descriptions.slice(0, limit).entries()) {
   const f = (x) => (x === null || x === undefined ? " -- " : x.toFixed(2));
   console.log(
     `${String(index + 1).padStart(3)}/${Math.min(limit, descriptions.length)} ${item.db_id.padEnd(28)}` +
-      `${String(latencyMs).padStart(6)}ms  ${v.padEnd(22)}` +
+      `${(reused ? "reused" : `${latencyMs}ms`).padStart(8)}  ${v.padEnd(22)}` +
       (n ? ` tblP/R ${f(n.tables.precision)}/${f(n.tables.recall)}  colP/R ${f(n.columns.precision)}/${f(n.columns.recall)}` : "")
   );
 }
@@ -126,7 +146,15 @@ const summary = {
   seed: 42,
   ranAt: new Date().toISOString(),
   instances: results.length,
+  generated: results.filter((r) => !r.reused).length,
+  reused: results.filter((r) => r.reused).length,
   wallClockMs: Math.round(performance.now() - started),
+  // Latency is reported over generated instances only. A resumed run's wall
+  // clock is not a measurement of anything.
+  meanLatencyMs: (() => {
+    const times = results.filter((r) => !r.reused && r.latencyMs !== null).map((r) => r.latencyMs);
+    return times.length ? Math.round(times.reduce((a, b) => a + b, 0) / times.length) : null;
+  })(),
   emptyOutput: results.filter((r) => !r.layer0).length,
   producedNoSchema: results.filter((r) => r.normalised?.empty).length,
   fallbackDescriptions: results.filter((r) => r.fallbackDescription).map((r) => r.db_id),
@@ -139,7 +167,23 @@ const summary = {
   normalised: aggregate("normalised"),
 };
 
-writeFileSync(`${outDir}/results.json`, JSON.stringify({ summary, results }, null, 2));
+// A partial run must never clobber a fuller one. Learned the hard way: a
+// three-instance resume test pointed at a completed run's directory replaced a
+// hundred-instance results file, which was only recoverable because it had been
+// committed. Partial results are still written, under a name that says so.
+const resultsPath = `${outDir}/results.json`;
+let target = resultsPath;
+if (existsSync(resultsPath)) {
+  const existing = JSON.parse(readFileSync(resultsPath, "utf8"));
+  if ((existing.summary?.instances ?? 0) > results.length) {
+    target = `${outDir}/results-partial-${results.length}.json`;
+    console.log(
+      `\n! ${resultsPath} holds ${existing.summary.instances} instances; this run has ${results.length}.` +
+        `\n! Writing to ${target} instead so the fuller result survives.`
+    );
+  }
+}
+writeFileSync(target, JSON.stringify({ summary, results }, null, 2));
 
 const pct = (x) => (x === null ? "  --  " : (x * 100).toFixed(1).padStart(5) + "%");
 console.log(`\n${"".padEnd(70, "-")}`);
