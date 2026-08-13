@@ -1774,3 +1774,93 @@ than three separate choices.
    `DELETE`, `MERGE`, `WITH`, `EXPLAIN`, `ANALYZE`, `VACUUM`, `BEGIN`, `COMMIT`,
    `ROLLBACK`, `CALL`. A non-DDL statement opening with anything else would fall
    through to the ordinary parse and be reported as malformed.
+
+## Week 9 — 2026-08-13 — how the baseline arm will be reported, fixed before the result
+
+**Written with 7 of 100 instances answered and no aggregate in existence.** The
+split-failure count is unknown at the time of writing, which is the point: the
+reporting rule cannot be chosen by the number it will produce.
+
+### The rule
+
+**The headline denominator for both arms is instances the endpoint answered.**
+
+Precision and recall are computed over deliberately different denominators, and
+both counts are stated beside both figures rather than in a footnote:
+
+- **Recall** is averaged over every answered instance. An instance that returned
+  something unusable contributes **0**, because the gold tables exist and none of
+  them were found. That is a measurement, not an imputation.
+- **Precision** is averaged over answered instances that produced a schema.
+  Precision over zero generated elements is undefined, and imputing 0 would be
+  inventing a measurement rather than recording one.
+
+So a result reads "precision 40% (n=60), recall 24% (n=100)" and never "precision
+40%" alone.
+
+**Infrastructure failures are excluded from both** and reported separately. An
+endpoint that never answered has told us nothing about the model, and the same
+rule already keeps the reflection loop's convergence rate honest.
+
+### Why the answered-instances denominator leads, and not usable-instances
+
+Two figures are available and both are true. "Precision over usable instances"
+describes schema quality when the arm works. "Precision over answered instances"
+describes the arm as something a developer would actually use.
+
+The second leads, for a reason that has nothing to do with which flatters the
+pipeline: **the pipeline arm produced a usable schema for all 100 instances.**
+Leading with usable-only figures would compare the pipeline over 100 against the
+baseline over some smaller number, and a comparison across different denominators
+is invalid regardless of what the numbers say. It is the same error as the two
+arms using different aggregation code, which was found and fixed today.
+
+The usable-only figure is reported alongside, because "how good is it when it
+works" is a real question. It is simply not the headline.
+
+### The aggregation defect found today
+
+Both runners computed macro averages over instances that produced a schema,
+silently excluding the rest from **both** precision and recall. Two things about
+it are worth recording rather than quietly fixing:
+
+**The exposure was asymmetric.** On the pipeline arm every instance answered and
+produced a schema, so the defect changed nothing. On the baseline arm, where
+unusable responses are expected, it would have reported the average of the
+instances that happened to work and presented it as a reliability figure.
+
+**The pipeline figures were verified, not assumed unaffected.** Re-aggregating
+the committed schemas under the corrected function reproduced 55.2% / 31.0%
+exactly, so the published numbers stand on a check rather than on an argument.
+
+The two arms now share one aggregation function. Using different code on either
+side of a comparison would invalidate it whatever the numbers showed.
+
+### A property of the parser, for §2.5.1
+
+Recursive descent reports the position at which it could no longer proceed. For
+an unrecognised construct **inside** a bracketed list that position is
+systematically the enclosing parenthesis, not the offending token, because the
+parser stops recognising column definitions and the closing parenthesis becomes
+unreachable. Measured:
+
+| construct | verdict | line |
+| --- | --- | --- |
+| unrecognised construct inside a table body | `UnclosedParenthesis` | the enclosing `(` |
+| a second, different one inside a body | `UnclosedParenthesis` | the enclosing `(` |
+| unrecognised construct outside any body | `UnexpectedToken` | the offending token |
+| unrecognised statement keyword outside | `UnexpectedToken` | the offending token |
+
+This explains with one mechanism both the published grammar collapsing every
+unsupported construct into `UnclosedParenthesis` at line 1, and the two MySQL
+generated-column cases doing the same under the extended grammar. **It is not a
+coverage gap that widening the grammar fixes.** It is a property of recursive
+descent over bracketed lists and belongs in §2.5.1 stated as such.
+
+**The consequence, which matters more than the mechanism:** the error-type
+distribution for parse failures is a distribution over *parser states*, not over
+*causes*. `UnclosedParenthesis: 2` means two unrecognised constructs, not two
+unbalanced parentheses. `ScopeViolation` is the exception — it is detected at
+statement level before any body is entered, so it does identify its cause. Any
+table of Layer 0 error types must say which of its rows describe causes and which
+describe the position at which the parser gave up.
