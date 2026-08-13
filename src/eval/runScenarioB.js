@@ -39,7 +39,8 @@ const arg = (name, fallback) => {
 const outDir = arg("--out", `${ROOT}tests/scenario-b-${new Date().toISOString().slice(0, 10)}`);
 mkdirSync(outDir, { recursive: true });
 
-const FIXTURES = [
+const only = arg("--only", null);
+const ALL = [
   {
     id: "blog",
     description: "A blog with users, posts and tags. Posts belong to a user and can have many tags.",
@@ -49,6 +50,7 @@ const FIXTURES = [
     description: "An online shop with customers, orders and the line items on each order.",
   },
 ];
+const FIXTURES = only ? ALL.filter(f => f.id === only) : ALL;
 
 // The symmetric measure: did the arm emit content that had to be removed before
 // the module could be parsed? One function, both arms, no delimiter advantage.

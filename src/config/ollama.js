@@ -80,13 +80,46 @@ async function request(
         model: "qwen2.5-coder:7b",
         system,
         prompt,
-        stream: false,
+        stream: true,
         options,
       }),
       signal: AbortSignal.timeout(timeoutMs),
     });
     if (!res.ok) throw new OllamaResponseError(res.status, res.statusText);
-    return await res.json();
+
+    // Streamed, and not for latency: undici's bodyTimeout defaults to 300 s and
+    // measures the gap between chunks. A non-streaming request sends nothing
+    // until generation completes, so any generation longer than five minutes had
+    // its connection killed and surfaced as `fetch failed` regardless of the
+    // timeout configured above, which was never in effect. Streaming resets that
+    // timer on every token.
+    //
+    // Transport only: same model, prompt, options and seed, so the determinism
+    // property is untouched. Verified byte-identical against a non-streaming
+    // request rather than assumed.
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let response = "";
+    let final = {};
+
+    for await (const chunk of res.body) {
+      buffer += decoder.decode(chunk, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) {
+        if (line.trim() === "") continue;
+        const part = JSON.parse(line);
+        if (typeof part.response === "string") response += part.response;
+        if (part.done) final = part;
+      }
+    }
+    if (buffer.trim() !== "") {
+      const part = JSON.parse(buffer);
+      if (typeof part.response === "string") response += part.response;
+      if (part.done) final = part;
+    }
+
+    return { ...final, response };
   } catch (err) {
     // AbortSignal.timeout aborts with a TimeoutError DOMException. Undici
     // surfaces it either directly or wrapped in a TypeError whose `cause` is
