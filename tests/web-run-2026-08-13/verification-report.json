@@ -1,0 +1,42 @@
+{
+  "verified": true,
+  "schemaAttempts": [
+    {
+      "attempt": 1,
+      "latencyMs": 46477,
+      "outputChars": 837,
+      "tableCount": 3,
+      "verified": true,
+      "failedLayer": null,
+      "errorType": null,
+      "feedbackSent": false
+    }
+  ],
+  "routeAttempts": [
+    {
+      "attempt": 1,
+      "source": "generated",
+      "latencyMs": 244853,
+      "outputChars": 5811,
+      "routeCount": 13,
+      "verified": false,
+      "failedLayer": 1,
+      "errorType": "SyntaxError",
+      "violationCount": 0,
+      "feedbackSent": true
+    },
+    {
+      "attempt": 2,
+      "source": "generated",
+      "latencyMs": 294598,
+      "outputChars": 7187,
+      "routeCount": 15,
+      "verified": true,
+      "failedLayer": null,
+      "errorType": null,
+      "violationCount": 0,
+      "feedbackSent": false
+    }
+  ],
+  "generatedAt": "2026-08-13T22:47:05.778Z"
+}
