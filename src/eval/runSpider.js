@@ -48,6 +48,11 @@ for (const [index, item] of descriptions.slice(0, limit).entries()) {
   const gold = goldSchema(byId.get(item.db_id));
 
   const path = `${outDir}/generated/${item.db_id}.sql`;
+  // Latency is persisted beside the schema because it cannot be recovered by
+  // re-reading one. Three separate telemetry losses to --resume established the
+  // rule: a value that cannot be recomputed from the artefact must be written
+  // next to it at the moment it is produced.
+  const metaPath = `${outDir}/generated/${item.db_id}.meta.json`;
   const reused = resume && existsSync(path);
 
   const t0 = performance.now();
@@ -64,7 +69,9 @@ for (const [index, item] of descriptions.slice(0, limit).entries()) {
   }
   // A reused schema has no latency of its own; recording the read time would
   // corrupt the mean. Null is carried through and excluded from the aggregate.
-  const latencyMs = reused ? null : Math.round(performance.now() - t0);
+  const latencyMs = reused
+    ? (existsSync(metaPath) ? JSON.parse(readFileSync(metaPath, "utf8")).latencyMs ?? null : null)
+    : Math.round(performance.now() - t0);
 
   const record = {
     db_id: item.db_id,
@@ -78,7 +85,10 @@ for (const [index, item] of descriptions.slice(0, limit).entries()) {
   };
 
   if (ddl !== null) {
-    if (!reused) writeFileSync(path, ddl);
+    if (!reused) {
+      writeFileSync(path, ddl);
+      writeFileSync(metaPath, JSON.stringify({ latencyMs }));
+    }
 
     const extended = verifyGrammar(ddl, { grammar: "extended" });
     const published = verifyGrammar(ddl, { grammar: "published" });

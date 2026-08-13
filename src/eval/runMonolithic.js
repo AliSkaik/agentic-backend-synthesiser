@@ -44,6 +44,7 @@ for (const [index, item] of descriptions.slice(0, limit).entries()) {
   let raw = null;
   let metrics = { promptTokens: null, evalTokens: null, totalDurationMs: null };
   let error = null;
+  let restoredLatency = null;
 
   // Telemetry is persisted beside the response, because it cannot be recovered
   // by re-reading one. A resumed run that did not restore it would silently
@@ -53,7 +54,7 @@ for (const [index, item] of descriptions.slice(0, limit).entries()) {
 
   if (reused) {
     raw = readFileSync(rawPath, "utf8");
-    if (existsSync(metaPath)) metrics = JSON.parse(readFileSync(metaPath, "utf8"));
+    if (existsSync(metaPath)) { metrics = JSON.parse(readFileSync(metaPath, "utf8")); restoredLatency = metrics.latencyMs ?? null; }
   } else {
     try {
       const response = await generateMonolithic(item.description);
@@ -63,7 +64,7 @@ for (const [index, item] of descriptions.slice(0, limit).entries()) {
       error = { type: err?.type ?? err?.name ?? "Error", message: err?.message ?? String(err) };
     }
   }
-  const latencyMs = reused ? null : Math.round(performance.now() - t0);
+  const latencyMs = reused ? restoredLatency : Math.round(performance.now() - t0);
 
   const record = {
     db_id: item.db_id,
