@@ -1,0 +1,75 @@
+{
+  "n": 1,
+  "ranAt": "2026-08-13T18:26:23.214Z",
+  "results": [
+    {
+      "id": "orders",
+      "description": "An online shop with customers, orders and the line items on each order.",
+      "baseline": {
+        "latencyMs": 77339,
+        "promptTokens": 125,
+        "evalTokens": 540,
+        "split": true,
+        "splitReason": "ok",
+        "extraction": {
+          "removedChars": 784,
+          "fraction": 0.3156199677938808
+        },
+        "layer0": {
+          "passed": true,
+          "type": null
+        },
+        "verified": true,
+        "failedLayer": null,
+        "errorType": null
+      },
+      "pipeline": {
+        "schema": {
+          "outcome": "verified",
+          "attempts": [
+            {
+              "attempt": 1,
+              "latencyMs": 28175,
+              "outputChars": 837,
+              "tableCount": 3,
+              "verified": true,
+              "failedLayer": null,
+              "errorType": null,
+              "feedbackSent": false
+            }
+          ]
+        },
+        "routes": {
+          "outcome": "verified",
+          "attempts": [
+            {
+              "attempt": 1,
+              "source": "generated",
+              "latencyMs": 254650,
+              "outputChars": 5811,
+              "routeCount": 13,
+              "verified": false,
+              "failedLayer": 1,
+              "errorType": "SyntaxError",
+              "violationCount": 0,
+              "feedbackSent": true
+            },
+            {
+              "attempt": 2,
+              "source": "generated",
+              "latencyMs": 302575,
+              "outputChars": 7187,
+              "routeCount": 15,
+              "verified": true,
+              "failedLayer": null,
+              "errorType": null,
+              "violationCount": 0,
+              "feedbackSent": false
+            }
+          ]
+        },
+        "totalLatencyMs": 585423
+      }
+    }
+  ]
+}

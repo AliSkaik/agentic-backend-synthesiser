@@ -1,0 +1,84 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE customers (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    address TEXT NOT NULL
+);
+
+CREATE TABLE orders (
+    id SERIAL PRIMARY KEY,
+    customer_id INT REFERENCES customers(id),
+    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    total_amount DECIMAL(10, 2) NOT NULL
+);
+
+CREATE TABLE line_items (
+    id SERIAL PRIMARY KEY,
+    order_id INT REFERENCES orders(id),
+    product_name VARCHAR(100) NOT NULL,
+    quantity INT NOT NULL,
+    price_per_item DECIMAL(10, 2) NOT NULL,
+    total_price DECIMAL(10, 2) NOT NULL
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Get all customers and their orders with line items
+router.get('/customers', async (req, res) => {
+    try {
+        const query = `
+            SELECT 
+                c.id AS customer_id,
+                c.name,
+                c.email,
+                c.address,
+                o.id AS order_id,
+                o.order_date,
+                o.total_amount,
+                li.id AS line_item_id,
+                li.product_name,
+                li.quantity,
+                li.price_per_item,
+                li.total_price
+            FROM 
+                customers c
+            LEFT JOIN 
+                orders o ON c.id = o.customer_id
+            LEFT JOIN 
+                line_items li ON o.id = li.order_id;
+        `;
+
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching customers and their orders:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **PostgreSQL Schema**:
+   - `customers` table stores customer details.
+   - `orders` table stores order details, linked to a customer.
+   - `line_items` table stores individual line items for each order.
+
+2. **Express Router**:
+   - The `/customers` endpoint retrieves all customers along with their orders and line items.
+   - It uses a LEFT JOIN to ensure that even customers without any orders are included in the result.
+   - The query is executed using `pool.query` from the imported `db.js` file, which should contain your PostgreSQL connection pool.
+
+Make sure you have the necessary dependencies installed (`express`, `pg`) and properly set up your database connection in `db.js`.
