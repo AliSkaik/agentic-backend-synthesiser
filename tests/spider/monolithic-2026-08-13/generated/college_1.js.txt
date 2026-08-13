@@ -1,0 +1,66 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to find the number of professors in accounting department
+router.get('/professors/accounting', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT COUNT(*) AS professor_count
+            FROM professors
+            JOIN departments ON professors.department_id = departments.id
+            WHERE departments.name = 'Accounting'
+        `);
+        res.json({ professor_count: result.rows[0].professor_count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the number of professors in accounting dept
+router.get('/professors/accounting', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT COUNT(*) AS professor_count
+            FROM professors
+            JOIN departments ON professors.department_id = departments.id
+            WHERE departments.name = 'Accounting'
+        `);
+        res.json({ professor_count: result.rows[0].professor_count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the number of professors teaching class with code ACCT-211
+router.get('/professors/classes/ACCT-211', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT COUNT(*) AS professor_count
+            FROM professor_course_assignments
+            JOIN courses ON professor_course_assignments.course_id = courses.id
+            WHERE courses.code = 'ACCT-211'
+        `);
+        res.json({ professor_count: result.rows[0].professor_count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the first and last name of the professor in biology department
+router.get('/professors/biology', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT professors.first_name, professors.last_name
+            FROM professors
+            JOIN departments ON professors.department_id = departments.id
+            WHERE departments.name = 'Biology'
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

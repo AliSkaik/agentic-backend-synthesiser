@@ -1,0 +1,83 @@
+### PostgreSQL Schema
+
+First, let's design the database schema for music. We'll create tables for artists and possibly other related entities like albums or songs if needed.
+
+```sql
+CREATE TABLE artists (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    birth_date DATE NOT NULL
+);
+```
+
+### Express Router
+
+Next, let's create an Express router to handle the REST endpoints for querying the database. We'll use a PostgreSQL connection pool imported from `../db.js`.
+
+```javascript
+import express from 'express';
+import { Pool } from 'pg';
+
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+});
+
+const router = express.Router();
+
+// Endpoint to count the number of artists
+router.get('/count-artists', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM artists');
+        res.json({ count: parseInt(result.rows[0].count) });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list the age of all music artists
+router.get('/ages-of-artists', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT EXTRACT(YEAR FROM AGE(birth_date)) AS age FROM artists');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the average age of all artists
+router.get('/average-age', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT AVG(EXTRACT(YEAR FROM AGE(birth_date))) AS average_age FROM artists');
+        res.json({ average_age: parseFloat(result.rows[0].average_age.toFixed(2)) });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **PostgreSQL Schema**:
+   - We created a table named `artists` with columns for `id`, `name`, and `birth_date`.
+
+2. **Express Router**:
+   - We defined three endpoints:
+     - `/count-artists`: Returns the total number of artists.
+     - `/ages-of-artists`: Returns an array of ages for all artists.
+     - `/average-age`: Returns the average age of all artists.
+
+Each endpoint uses `pool.query` to execute SQL queries against the PostgreSQL database. The results are then returned as JSON responses.
+
+### Environment Variables
+
+Make sure you have a `.env` file with the following environment variable:
+
+```plaintext
+DATABASE_URL=your_postgresql_connection_string
+```
+
+Replace `your_postgresql_connection_string` with your actual PostgreSQL connection string.
+
+This setup should allow you to interact with your music database and retrieve the required information through REST endpoints.

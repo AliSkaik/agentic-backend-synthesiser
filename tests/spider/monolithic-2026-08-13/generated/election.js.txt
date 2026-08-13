@@ -1,0 +1,36 @@
+import express from 'express';
+import { pool } from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the total number of counties
+router.get('/counties/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM counties');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the name and population of all counties
+router.get('/counties', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, population FROM counties');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the average population of all counties
+router.get('/counties/average', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT AVG(population) AS avg_population FROM counties');
+        res.json({ averagePopulation: result.rows[0].avg_population });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

@@ -1,0 +1,36 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Get the number of accounts
+router.get('/accounts/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM accounts');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get all account ids and details
+router.get('/accounts', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id, name, balance FROM accounts');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get the number of statements
+router.get('/statements/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM statements');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

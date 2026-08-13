@@ -1,0 +1,85 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE customers (
+    customer_id SERIAL PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL
+);
+
+CREATE TABLE policies (
+    policy_id SERIAL PRIMARY KEY,
+    policy_type_code VARCHAR(20) NOT NULL,
+    customer_id INT REFERENCES customers(customer_id)
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. List the names of all the customers in alphabetical order.
+router.get('/customers', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT first_name, last_name FROM customers ORDER BY first_name, last_name');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. Find all the policy type codes associated with the customer "Dayana Robel".
+router.get('/customers/dayana-robel/policy-types', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT DISTINCT policy_type_code
+            FROM policies
+            JOIN customers ON policies.customer_id = customers.customer_id
+            WHERE first_name = 'Dayana' AND last_name = 'Robel'
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. Which type of policy is most frequently used? Give me the policy type code.
+router.get('/policy-types/most-frequent', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT policy_type_code
+            FROM policies
+            GROUP BY policy_type_code
+            ORDER BY COUNT(*) DESC
+            LIMIT 1
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Customers Table**: Stores customer details with a unique identifier (`customer_id`), first name, last name, and email.
+2. **Policies Table**: Stores policy details with a unique identifier (`policy_id`), policy type code, and a foreign key linking to the `customers` table.
+
+### Endpoints
+
+1. **GET /customers**: Returns all customer names sorted alphabetically by first name and then last name.
+2. **GET /customers/dayana-robel/policy-types**: Returns all distinct policy type codes associated with the customer "Dayana Robel".
+3. **GET /policy-types/most-frequent**: Returns the most frequently used policy type code.
+
+### Notes
+
+- Ensure that you have a PostgreSQL database and a connection pool set up in your `db.js` file.
+- The Express router is designed to handle GET requests for the specified endpoints, querying the database using `pool.query`.
+- Error handling is included to catch any issues during database operations.

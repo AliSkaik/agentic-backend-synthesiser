@@ -1,0 +1,68 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE climbers (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    country VARCHAR(50),
+    points INTEGER DEFAULT 0
+);
+```
+
+### Express Router (ES Module)
+
+```javascript
+import express from 'express';
+import { pool } from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to count the number of climbers
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM climbers');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list the names of climbers in descending order of points
+router.get('/names-desc', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM climbers ORDER BY points DESC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list the names of climbers whose country is not Switzerland
+router.get('/names-not-switzerland', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM climbers WHERE country != \'Switzerland\'');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **PostgreSQL Schema**:
+   - A `climbers` table is created with columns for `id`, `name`, `country`, and `points`.
+   - The `id` column is the primary key and auto-increments.
+   - The `name` column stores the climber's name.
+   - The `country` column stores the climber's country of origin.
+   - The `points` column stores the climber's points, defaulting to 0.
+
+2. **Express Router**:
+   - Three endpoints are defined:
+     - `/count`: Returns the total number of climbers.
+     - `/names-desc`: Returns a list of climber names ordered by their points in descending order.
+     - `/names-not-switzerland`: Returns a list of climber names whose country is not Switzerland.
+
+Each endpoint uses `pool.query` to execute SQL queries against the PostgreSQL database. The results are then returned as JSON responses.

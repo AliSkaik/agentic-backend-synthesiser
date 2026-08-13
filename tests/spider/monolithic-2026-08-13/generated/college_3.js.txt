@@ -1,0 +1,36 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to count all courses
+router.get('/courses/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM courses');
+        res.json({ total_courses: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to count courses with more than 2 credits
+router.get('/courses/count/credits', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM courses WHERE credits > 2');
+        res.json({ courses_more_than_2_credits: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list names of courses with 1 credit
+router.get('/courses/names/credits', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM courses WHERE credits = 1');
+        res.json({ course_names_with_1_credit: result.rows.map(row => row.name) });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

@@ -1,0 +1,81 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. What is the id of the city that hosted events in the most recent year?
+router.get('/most-recent-city-id', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT city_id
+            FROM events
+            WHERE date >= DATE_TRUNC('year', CURRENT_DATE)
+            ORDER BY date DESC
+            LIMIT 1;
+        `);
+        res.json({ cityId: result.rows[0].city_id });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. Find the city that hosted some events in the most recent year.
+router.get('/most-recent-city', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT c.id, c.name
+            FROM cities c
+            JOIN events e ON c.id = e.city_id
+            WHERE e.date >= DATE_TRUNC('year', CURRENT_DATE)
+            ORDER BY e.date DESC
+            LIMIT 1;
+        `);
+        res.json({ cityId: result.rows[0].id, cityName: result.rows[0].name });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. Find the match ids of the cities that hosted competition "1994 FIFA World Cup qualification".
+router.get('/match-ids-for-qualification', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT e.id
+            FROM events e
+            WHERE e.event_name = '1994 FIFA World Cup qualification';
+        `);
+        res.json({ matchIds: result.rows.map(row => row.id) });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. Find the match id of the competition called "1994 FIFA World Cup qualification".
+router.get('/match-id-for-qualification', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT id
+            FROM events
+            WHERE event_name = '1994 FIFA World Cup qualification';
+        `);
+        res.json({ matchId: result.rows[0].id });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 5. Find the cities which were once a host city after 2010.
+router.get('/cities-after-2010', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT id, name
+            FROM cities
+            WHERE year > 2010;
+        `);
+        res.json({ cities: result.rows });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

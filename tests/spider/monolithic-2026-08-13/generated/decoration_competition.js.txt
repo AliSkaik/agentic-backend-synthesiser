@@ -1,0 +1,56 @@
+import express from 'express';
+import { pool } from '../db.js';
+
+const router = express.Router();
+
+// 1. How many members are there?
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM members');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. List the names of members in ascending alphabetical order.
+router.get('/names', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM members ORDER BY name ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. What are the names and countries of members?
+router.get('/names-countries', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, country FROM members');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. Show the names of members whose country is "United States" or "Canada".
+router.get('/us-canada', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM members WHERE country IN ($1, $2)', ['United States', 'Canada']);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 5. Show the different countries and the number of members from each.
+router.get('/countries-count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT country, COUNT(*) AS count FROM members GROUP BY country');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

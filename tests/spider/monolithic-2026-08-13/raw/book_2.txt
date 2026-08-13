@@ -1,0 +1,81 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE books (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    writer VARCHAR(255) NOT NULL,
+    issues INT NOT NULL
+);
+```
+
+### Express Router (ES Module)
+
+```javascript
+import express from 'express';
+import { pool } from '../db.js';
+
+const router = express.Router();
+
+// 1. How many books are there?
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM books');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. List the writers of the books in ascending alphabetical order.
+router.get('/writers', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT DISTINCT writer FROM books ORDER BY writer ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. List the titles of the books in ascending order of issues.
+router.get('/titles', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT title FROM books ORDER BY issues ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. What are the titles of the books whose writer is not "Elaine Lee"?
+router.get('/titles-not-elaine', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT title FROM books WHERE writer != $1', ['Elaine Lee']);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 5. What are the title and issues of the books?
+router.get('/titles-and-issues', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT title, issues FROM books');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Count of Books**: The `/count` endpoint returns the total number of books in the database.
+2. **Writers List**: The `/writers` endpoint lists all unique writers in ascending alphabetical order.
+3. **Titles by Issues**: The `/titles` endpoint lists all book titles sorted by their issue numbers in ascending order.
+4. **Titles Not Elaine Lee**: The `/titles-not-elaine` endpoint returns the titles of books where the writer is not "Elaine Lee".
+5. **Titles and Issues**: The `/titles-and-issues` endpoint returns both the title and issues for each book.
+
+Each endpoint uses a `pool.query` call to interact with the PostgreSQL database, ensuring that the queries are executed safely and efficiently.

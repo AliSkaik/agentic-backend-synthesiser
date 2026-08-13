@@ -1,0 +1,97 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE allergies (
+    id SERIAL PRIMARY KEY,
+    type VARCHAR(255) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE allergy_entries (
+    id SERIAL PRIMARY KEY,
+    patient_id INT NOT NULL,
+    allergy_id INT REFERENCES allergies(id),
+    severity VARCHAR(50),
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (patient_id) REFERENCES patients(id)
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Get the total number of allergies
+router.get('/total-allergies', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM allergies');
+        res.json({ total_allergies: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get the total number of allergy entries
+router.get('/total-allergy-entries', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM allergy_entries');
+        res.json({ total_allergy_entries: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get the number of different allergy types
+router.get('/distinct-allergy-types', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(DISTINCT type) FROM allergies');
+        res.json({ distinct_allergy_types: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get the number of distinct allergies
+router.get('/distinct-allergies', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(DISTINCT id) FROM allergies');
+        res.json({ distinct_allergies: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get all allergy types
+router.get('/all-allergy-types', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT DISTINCT type FROM allergies');
+        res.json({ allergy_types: result.rows.map(row => row.type) });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - `allergies` table stores information about different allergies, including their type and description.
+   - `allergy_entries` table stores entries related to allergy occurrences, linking back to the `allergies` table.
+
+2. **Express Router**:
+   - The router provides endpoints to answer various questions about allergies:
+     - `/total-allergies`: Returns the total number of distinct allergies.
+     - `/total-allergy-entries`: Returns the total number of allergy entries.
+     - `/distinct-allergy-types`: Returns the number of different types of allergies.
+     - `/distinct-allergies`: Returns the number of distinct allergies.
+     - `/all-allergy-types`: Returns a list of all distinct allergy types.
+
+Each endpoint uses `pool.query` to execute SQL queries against the PostgreSQL database and returns the results in JSON format.

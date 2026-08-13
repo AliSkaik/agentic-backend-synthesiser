@@ -1,0 +1,116 @@
+Sure! Below is the PostgreSQL schema and an Express router implementing REST endpoints for that schema.
+
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE IF NOT EXISTS locations (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    latitude DECIMAL(9, 6) NOT NULL,
+    longitude DECIMAL(9, 6) NOT NULL,
+    address VARCHAR(255),
+    city VARCHAR(100),
+    state VARCHAR(100),
+    country VARCHAR(100)
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Create a new location
+router.post('/', async (req, res) => {
+    const { name, latitude, longitude, address, city, state, country } = req.body;
+
+    try {
+        const result = await pool.query(
+            'INSERT INTO locations (name, latitude, longitude, address, city, state, country) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+            [name, latitude, longitude, address, city, state, country]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get all locations
+router.get('/', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM locations');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get a single location by ID
+router.get('/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const result = await pool.query('SELECT * FROM locations WHERE id = $1', [id]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Location not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Update a location by ID
+router.put('/:id', async (req, res) => {
+    const { id } = req.params;
+    const { name, latitude, longitude, address, city, state, country } = req.body;
+
+    try {
+        const result = await pool.query(
+            'UPDATE locations SET name = $1, latitude = $2, longitude = $3, address = $4, city = $5, state = $6, country = $7 WHERE id = $8 RETURNING *',
+            [name, latitude, longitude, address, city, state, country, id]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Location not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Delete a location by ID
+router.delete('/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const result = await pool.query('DELETE FROM locations WHERE id = $1 RETURNING *', [id]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Location not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **PostgreSQL Schema**:
+   - A table named `locations` is created with columns for `id`, `name`, `latitude`, `longitude`, `address`, `city`, `state`, and `country`.
+
+2. **Express Router**:
+   - The router handles CRUD operations for the `locations` table.
+   - `POST /`: Creates a new location.
+   - `GET /`: Retrieves all locations.
+   - `GET /:id`: Retrieves a single location by ID.
+   - `PUT /:id`: Updates a location by ID.
+   - `DELETE /:id`: Deletes a location by ID.
+
+Make sure you have the necessary dependencies installed (`express`, `pg`) and that your database connection is properly set up in `../db.js`.

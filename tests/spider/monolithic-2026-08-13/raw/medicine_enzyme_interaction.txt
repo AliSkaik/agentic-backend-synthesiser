@@ -1,0 +1,77 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE enzymes (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    location TEXT NOT NULL
+);
+```
+
+### Express Router (ES Module)
+
+```javascript
+import express from 'express';
+import { pool } from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the total count of enzymes
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM enzymes');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the number of kinds of enzymes
+router.get('/kinds', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(DISTINCT name) FROM enzymes');
+        res.json({ kinds: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list the names of enzymes in descending lexicographical order
+router.get('/names-desc', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM enzymes ORDER BY name DESC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list the names and locations of enzymes in descending order
+router.get('/names-locations-desc', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, location FROM enzymes ORDER BY name DESC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - The `enzymes` table has three columns: `id`, `name`, and `location`.
+   - `id` is a primary key that auto-increments.
+   - `name` is a unique identifier for each enzyme.
+   - `location` stores the location where the enzyme can make an effect.
+
+2. **Express Router**:
+   - The router defines four endpoints:
+     - `/count`: Returns the total count of enzymes.
+     - `/kinds`: Returns the number of distinct kinds of enzymes.
+     - `/names-desc`: Returns a list of enzyme names in descending lexicographical order.
+     - `/names-locations-desc`: Returns a list of enzyme names and their locations in descending order.
+
+Each endpoint uses `pool.query` to execute SQL queries against the PostgreSQL database. The results are then returned as JSON responses.

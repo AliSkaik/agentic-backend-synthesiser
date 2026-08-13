@@ -1,0 +1,56 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. How many editors are there?
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM editors');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. List the names of editors in ascending order of age.
+router.get('/names-ascending', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM editors ORDER BY age ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. What are the names and ages of editors?
+router.get('/names-ages', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, age FROM editors');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. List the names of editors who are older than 25.
+router.get('/older-than-25', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM editors WHERE age > 25');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 5. Show the names of editors of age either 24 or 25.
+router.get('/age-24-or-25', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM editors WHERE age IN (24, 25)');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

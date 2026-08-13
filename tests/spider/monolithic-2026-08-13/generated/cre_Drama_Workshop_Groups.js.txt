@@ -1,0 +1,56 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Get all drama workshop groups
+router.get('/groups', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM drama_workshop_groups');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get all bookings
+router.get('/bookings', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM bookings');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get the total number of bookings
+router.get('/bookings/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM bookings');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get the order dates of all bookings
+router.get('/bookings/order-dates', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT order_date FROM bookings');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get the planned and actual delivery dates of all bookings
+router.get('/bookings/delivery-dates', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT planned_delivery_date, actual_delivery_date FROM bookings');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

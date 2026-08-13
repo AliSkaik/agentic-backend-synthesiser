@@ -1,0 +1,89 @@
+### PostgreSQL Schema
+
+First, let's design the database schema for the bike system. We'll assume we have tables for `stations` and `weather_data`.
+
+```sql
+CREATE TABLE stations (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    latitude DECIMAL(9, 6) NOT NULL,
+    longitude DECIMAL(9, 6) NOT NULL,
+    city VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE weather_data (
+    id SERIAL PRIMARY KEY,
+    station_id INT REFERENCES stations(id),
+    date DATE NOT NULL,
+    max_temperature DECIMAL(5, 2) NOT NULL
+);
+```
+
+### Express Router
+
+Now, let's create an Express router to handle the REST endpoints for querying the database.
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get dates when max temperature was higher than 85
+router.get('/dates-max-temp-higher-than-85', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT date
+            FROM weather_data
+            WHERE max_temperature > 85;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get names of stations with latitude lower than 37.5
+router.get('/stations-latitude-lower-than-37.5', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT name
+            FROM stations
+            WHERE latitude < 37.5;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get highest latitude among stations for each city
+router.get('/highest-latitude-by-city', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT city, MAX(latitude) AS max_latitude
+            FROM stations
+            GROUP BY city;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - The `stations` table stores information about bike stations, including their name, latitude, longitude, and city.
+   - The `weather_data` table stores weather data for each station on a specific date, including the maximum temperature.
+
+2. **Express Router**:
+   - We define three endpoints:
+     - `/dates-max-temp-higher-than-85`: Returns dates when the max temperature was higher than 85.
+     - `/stations-latitude-lower-than-37.5`: Returns names of stations with latitude lower than 37.5.
+     - `/highest-latitude-by-city`: Returns the highest latitude among stations for each city.
+
+Each endpoint uses `pool.query` to execute a SQL query against the PostgreSQL database and returns the results as JSON. Error handling is included to catch any issues that may arise during the database queries.

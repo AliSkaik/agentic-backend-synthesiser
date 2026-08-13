@@ -1,0 +1,66 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE aircraft (
+    id SERIAL PRIMARY KEY,
+    description TEXT NOT NULL,
+    international_passengers INT NOT NULL DEFAULT 0
+);
+```
+
+### Express Router (ES Module)
+
+```javascript
+import express from 'express';
+import { pool } from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the total number of aircrafts
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM aircraft');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list the descriptions of all aircrafts
+router.get('/descriptions', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT description FROM aircraft');
+        res.json(result.rows.map(row => row.description));
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the average number of international passengers
+router.get('/average-passengers', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT AVG(international_passengers) AS avg_passengers FROM aircraft');
+        res.json({ averagePassengers: result.rows[0].avg_passengers });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **PostgreSQL Schema**:
+   - The `aircraft` table has three columns: `id`, `description`, and `international_passengers`.
+   - `id` is a primary key that auto-increments.
+   - `description` is a text field to store the description of each aircraft.
+   - `international_passengers` is an integer field to store the number of international passengers for each aircraft.
+
+2. **Express Router**:
+   - The router defines three endpoints:
+     - `/count`: Returns the total number of aircrafts in the database.
+     - `/descriptions`: Returns a list of descriptions for all aircrafts.
+     - `/average-passengers`: Returns the average number of international passengers across all aircrafts.
+
+Each endpoint uses `pool.query` to execute SQL queries against the PostgreSQL database. The results are then formatted and returned as JSON responses.

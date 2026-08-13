@@ -1,0 +1,46 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. How many farms are there?
+router.get('/farms/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM farms');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. List the total number of horses on farms in ascending order.
+router.get('/farms/horses', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT farm_id, SUM(total_horses) AS total_horses FROM farms GROUP BY farm_id ORDER BY total_horses ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. What is the total horses record for each farm, sorted ascending?
+router.get('/farms/horses/total', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id, name, total_horses FROM farms ORDER BY total_horses ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. What are the hosts of competitions whose theme is not "Aliens"?
+router.get('/competitions/hosts', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT host FROM competitions WHERE theme != \'Aliens\'');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

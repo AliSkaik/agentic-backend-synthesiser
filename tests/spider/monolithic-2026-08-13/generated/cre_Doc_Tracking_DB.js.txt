@@ -1,0 +1,36 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to count the number of all calendar items
+router.get('/calendar-items/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM calendar_items');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to show all calendar dates and day numbers
+router.get('/calendar-items', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT date, day_number FROM calendar_items');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to show the number of document types
+router.get('/document-types/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM document_types');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

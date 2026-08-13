@@ -1,0 +1,100 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE airports (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    city VARCHAR(255) NOT NULL,
+    country VARCHAR(255) NOT NULL,
+    elevation INTEGER NOT NULL
+);
+
+CREATE TABLE airlines (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Find the name of the airport in the city of Goroka
+router.get('/goroka', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM airports WHERE city = $1 LIMIT 1', ['Goroka']);
+        if (result.rows.length > 0) {
+            res.json(result.rows[0]);
+        } else {
+            res.status(404).json({ message: 'No airport found in Goroka' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// What are the names of the airports in the city of Goroka?
+router.get('/goroka/all', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM airports WHERE city = $1', ['Goroka']);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Find the name, city, country, and altitude of the airports in the city of New York
+router.get('/new-york', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, city, country, elevation FROM airports WHERE city = $1 LIMIT 1', ['New York']);
+        if (result.rows.length > 0) {
+            res.json(result.rows[0]);
+        } else {
+            res.status(404).json({ message: 'No airport found in New York' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// What is the name, city, country, and elevation for every airport in the city of New York?
+router.get('/new-york/all', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, city, country, elevation FROM airports WHERE city = $1', ['New York']);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// How many airlines are there?
+router.get('/airlines/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM airlines');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - `airports` table with columns for `id`, `name`, `city`, `country`, and `elevation`.
+   - `airlines` table with columns for `id` and `name`.
+
+2. **Express Router**:
+   - `/goroka`: Returns the name of one airport in Goroka.
+   - `/goroka/all`: Returns all airports in Goroka.
+   - `/new-york`: Returns the name, city, country, and elevation of one airport in New York.
+   - `/new-york/all`: Returns all airports in New York with their details.
+   - `/airlines/count`: Returns the total number of airlines.
+
+This setup ensures that you can query the database for specific information about airports and airlines using REST endpoints.

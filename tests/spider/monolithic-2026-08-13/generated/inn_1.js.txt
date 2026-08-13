@@ -1,0 +1,54 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Find the names of all modern rooms with a base price below $160 and two beds.
+router.get('/modern-rooms', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT name
+            FROM rooms
+            WHERE room_type = 'Modern' AND base_price < 160 AND beds = 2;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Find all the rooms that have a price higher than $160 and can accommodate more than two people. Report room names and ids.
+router.get('/expensive-rooms', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT id, name
+            FROM rooms
+            WHERE base_price > 160 AND capacity > 2;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Find the most popular room in the hotel. The most popular room is the room that had seen the largest number of reservations.
+router.get('/most-popular-room', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT r.id, r.name
+            FROM rooms r
+            JOIN (
+                SELECT room_id, COUNT(*) as reservation_count
+                FROM reservations
+                GROUP BY room_id
+            ) sub ON r.id = sub.room_id
+            ORDER BY sub.reservation_count DESC
+            LIMIT 1;
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+export default router;

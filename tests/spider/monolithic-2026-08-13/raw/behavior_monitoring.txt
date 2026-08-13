@@ -1,0 +1,105 @@
+### PostgreSQL Schema
+
+First, let's design the database schema. We'll assume we have two tables: `assessment_notes` and `incidents`.
+
+```sql
+CREATE TABLE assessment_notes (
+    id SERIAL PRIMARY KEY,
+    note TEXT NOT NULL,
+    date DATE NOT NULL,
+    address_id INT NOT NULL,
+    FOREIGN KEY (address_id) REFERENCES addresses(id)
+);
+
+CREATE TABLE addresses (
+    id SERIAL PRIMARY KEY,
+    street VARCHAR(255),
+    city VARCHAR(100),
+    state CHAR(2),
+    zip_code CHAR(5)
+);
+
+CREATE TABLE incidents (
+    id SERIAL PRIMARY KEY,
+    type_code VARCHAR(50) NOT NULL,
+    detention_type_code VARCHAR(50),
+    address_id INT NOT NULL,
+    FOREIGN KEY (address_id) REFERENCES addresses(id)
+);
+```
+
+### Express Router
+
+Now, let's create an Express router to handle the REST endpoints for querying the database.
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get total number of assessment notes
+router.get('/assessment-notes/total', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM assessment_notes');
+        res.json({ total_assessment_notes: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get dates of assessment notes
+router.get('/assessment-notes/dates', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT DISTINCT date FROM assessment_notes');
+        res.json({ dates: result.rows.map(row => row.date) });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get number of addresses with zip code 197
+router.get('/addresses/zip-code-197', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM addresses WHERE zip_code = \'197\'');
+        res.json({ count_addresses_zip_197: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get distinct incident type codes
+router.get('/incidents/type-codes', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT DISTINCT type_code FROM incidents');
+        res.json({ distinct_type_codes: result.rows.map(row => row.type_code) });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get all distinct detention type codes
+router.get('/incidents/detention-type-codes', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT DISTINCT detention_type_code FROM incidents');
+        res.json({ distinct_detention_type_codes: result.rows.map(row => row.detention_type_code) });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - `assessment_notes` table stores notes with a date and an address ID.
+   - `addresses` table stores addresses with a zip code.
+   - `incidents` table stores incidents with type codes and detention type codes, linked to addresses.
+
+2. **Express Router**:
+   - Each endpoint queries the database using `pool.query` from the imported `pg` connection pool.
+   - The results are returned as JSON objects.
+
+This setup allows you to query various aspects of the data through REST endpoints in a clean and efficient manner.

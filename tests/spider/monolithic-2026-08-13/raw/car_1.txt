@@ -1,0 +1,108 @@
+### PostgreSQL Schema
+
+First, let's design the database schema for the car system. We'll assume that we have tables for `continents`, `countries`, and potentially other related entities if needed.
+
+```sql
+CREATE TABLE continents (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE
+);
+
+CREATE TABLE countries (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    continent_id INT REFERENCES continents(id)
+);
+```
+
+### Express Router
+
+Now, let's create an Express router to handle the REST endpoints for querying the database.
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the number of continents
+router.get('/continents/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM continents');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the number of countries
+router.get('/countries/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM countries');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the number of countries per continent
+router.get('/continents/countries', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                c.id AS continent_id,
+                c.name AS continent_name,
+                COUNT(co.id) AS country_count
+            FROM 
+                continents c
+            LEFT JOIN 
+                countries co ON c.id = co.continent_id
+            GROUP BY 
+                c.id, c.name;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - We have two tables: `continents` and `countries`.
+   - The `continents` table has an `id` as the primary key and a `name` field.
+   - The `countries` table has an `id` as the primary key, a `name` field, and a foreign key `continent_id` referencing the `id` in the `continents` table.
+
+2. **Express Router**:
+   - We define three endpoints:
+     - `/continents/count`: Returns the total number of continents.
+     - `/countries/count`: Returns the total number of countries.
+     - `/continents/countries`: Returns a list of continents along with the count of countries in each continent.
+
+Each endpoint uses `pool.query` to execute SQL queries against the PostgreSQL database. The results are then returned as JSON responses.
+
+### Usage
+
+To use this router, you would typically import it into your main application file (e.g., `app.js`) and mount it:
+
+```javascript
+import express from 'express';
+import db from './db.js'; // Assuming your database connection is exported here
+import continentsRouter from './routes/continents.js';
+
+const app = express();
+const port = 3000;
+
+// Mount the router
+app.use('/api', continentsRouter);
+
+// Start the server
+app.listen(port, () => {
+    console.log(`Server running on http://localhost:${port}`);
+});
+```
+
+This setup will allow you to interact with your database through the defined REST endpoints.

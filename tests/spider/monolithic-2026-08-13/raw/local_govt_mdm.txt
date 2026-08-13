@@ -1,0 +1,164 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE cmi_masters (
+    id SERIAL PRIMARY KEY,
+    cross_reference_code VARCHAR(50) NOT NULL,
+    details TEXT
+);
+
+CREATE TABLE cmi_cross_references (
+    id SERIAL PRIMARY KEY,
+    source_system_code VARCHAR(50) NOT NULL,
+    cmi_master_id INT REFERENCES cmi_masters(id)
+);
+
+CREATE TABLE business_rates (
+    id SERIAL PRIMARY KEY,
+    cmi_cross_reference_id INT REFERENCES cmi_cross_references(id),
+    master_customer_id INT
+);
+
+CREATE TABLE taxes (
+    id SERIAL PRIMARY KEY,
+    source_system_code VARCHAR(50) NOT NULL,
+    master_customer_id INT,
+    parking_fine_id INT
+);
+
+CREATE TABLE benefits_and_overpayments (
+    id SERIAL PRIMARY KEY,
+    tax_source_system_code VARCHAR(50) NOT NULL,
+    benefit_id INT
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. What are the details of the cmi masters that have the cross reference code 'Tax'?
+router.get('/cmi-masters/tax-details', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT cm.id, cm.details
+            FROM cmi_masters cm
+            JOIN cmi_cross_references crc ON cm.id = crc.cmi_master_id
+            WHERE crc.cross_reference_code = 'Tax'
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 2. What is the cmi cross reference id that is related to at least one council tax entry?
+router.get('/cmi-cross-references/council-tax', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT crc.id
+            FROM cmi_cross_references crc
+            JOIN business_rates br ON crc.id = br.cmi_cross_reference_id
+            WHERE br.master_customer_id IS NOT NULL
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 3. List the cross reference id and source system code.
+router.get('/cmi-cross-references', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT crc.id, crc.source_system_code
+            FROM cmi_cross_references crc
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 4. How many business rates are related to each cmi cross reference?
+router.get('/cmi-cross-references/business-rates-count', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT crc.id, COUNT(br.id) AS business_rates_count
+            FROM cmi_cross_references crc
+            LEFT JOIN business_rates br ON crc.id = br.cmi_cross_reference_id
+            GROUP BY crc.id
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 5. List cross reference id, master customer id and the n
+router.get('/cmi-cross-references/business-rates', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT crc.id, br.master_customer_id
+            FROM cmi_cross_references crc
+            JOIN business_rates br ON crc.id = br.cmi_cross_reference_id
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 6. What is the tax source system code related to the benefits and overpayments? List the code and the benifit id, order by benifit id.
+router.get('/tax-source-system-code/benefits-overpayments', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT tss.code, b.id AS benefit_id
+            FROM taxes tss
+            JOIN benefits_and_overpayments b ON tss.tax_source_system_code = b.tax_source_system_code
+            ORDER BY b.id
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 7. What is the tax source system code and master customer id of the taxes related to each parking fine id?
+router.get('/tax-source-system-code/parking-fines', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT tss.code, t.master_customer_id
+            FROM taxes tss
+            JOIN taxes t ON tss.tax_source_system_code = t.tax_source_system_code AND t.parking_fine_id IS NOT NULL
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **CMI Masters and Cross References**: The schema includes tables for `cmi_masters` and `cmi_cross_references`. Each master can have multiple cross references.
+2. **Business Rates**: A table to link business rates to their corresponding cross references.
+3. **Taxes and Benefits/Overpayments**: Tables to manage taxes and their relationship with benefits and overpayments.
+
+### Endpoints
+
+- `/cmi-masters/tax-details`: Retrieves details of CMI masters with the cross reference code 'Tax'.
+- `/cmi-cross-references/council-tax`: Lists CMI cross references related to at least one council tax entry.
+- `/cmi-cross-references`: Lists all CMI cross references with their source system codes.
+- `/cmi-cross-references/business-rates-count`: Counts the number of business rates associated with each CMI cross reference.
+- `/cmi-cross-references/business-rates`: Lists cross reference IDs and master customer IDs for business rates.
+- `/tax-source-system-code/benefits-overpayments`: Lists tax source system codes related to benefits and overpayments, ordered by benefit ID.
+- `/tax-source-system-code/parking-fines`: Lists tax source system codes and master customer IDs of taxes related to each parking fine ID.
+
+Each endpoint uses a `pool.query` call to interact with the PostgreSQL database.

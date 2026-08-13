@@ -1,0 +1,29 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// List all vehicle ids
+router.get('/vehicles/ids', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id FROM vehicles');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Show the detail of vehicle with id 1
+router.get('/vehicles/1', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM vehicles WHERE id = $1', [1]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Vehicle not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

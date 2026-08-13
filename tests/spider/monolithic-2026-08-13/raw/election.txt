@@ -1,0 +1,67 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE counties (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    population INTEGER NOT NULL
+);
+```
+
+### Express Router (ES Module)
+
+```javascript
+import express from 'express';
+import { pool } from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the total number of counties
+router.get('/counties/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM counties');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the name and population of all counties
+router.get('/counties', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, population FROM counties');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the average population of all counties
+router.get('/counties/average', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT AVG(population) AS avg_population FROM counties');
+        res.json({ averagePopulation: result.rows[0].avg_population });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - A table named `counties` is created with three columns: `id`, `name`, and `population`.
+   - `id` is a primary key that auto-increments.
+   - `name` and `population` are required fields.
+
+2. **Express Router**:
+   - Three endpoints are defined:
+     - `/counties/count`: Returns the total number of counties.
+     - `/counties`: Returns the name and population of all counties.
+     - `/counties/average`: Returns the average population of all counties.
+   - Each endpoint uses `pool.query` to execute SQL queries against the PostgreSQL database.
+   - Error handling is included to catch any issues that may occur during the query execution.
+
+This setup ensures that you can interact with your PostgreSQL database through RESTful endpoints using Node.js and Express.

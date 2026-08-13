@@ -1,0 +1,90 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE elections (
+    id SERIAL PRIMARY KEY,
+    date DATE NOT NULL,
+    vote_percent NUMERIC(5, 2) NOT NULL
+);
+
+CREATE TABLE representatives (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    party VARCHAR(100) NOT NULL
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. How many elections are there?
+router.get('/elections/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM elections');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. List the votes of elections in descending order.
+router.get('/elections/votes', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT vote_percent FROM elections ORDER BY vote_percent DESC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. List the dates and vote percents of elections.
+router.get('/elections/dates-and-votes', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT date, vote_percent FROM elections');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. What are the minimum and maximum vote percents of elections?
+router.get('/elections/vote-percents', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT MIN(vote_percent) AS min_vote, MAX(vote_percent) AS max_vote FROM elections');
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 5. What are the names and parties of representatives?
+router.get('/representatives', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, party FROM representatives');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Elections Table**: Stores information about each election with an `id`, `date`, and `vote_percent`.
+2. **Representatives Table**: Stores information about each representative with an `id`, `name`, and `party`.
+
+The Express router provides endpoints to answer the following questions:
+- `/elections/count`: Returns the total number of elections.
+- `/elections/votes`: Lists all vote percents in descending order.
+- `/elections/dates-and-votes`: Lists dates and corresponding vote percents.
+- `/elections/vote-percents`: Returns the minimum and maximum vote percents.
+- `/representatives`: Lists names and parties of representatives.
+
+Each endpoint uses `pool.query` to interact with the PostgreSQL database.

@@ -1,0 +1,66 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE companies (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    headquarters VARCHAR(255),
+    market_value NUMERIC(15, 2)
+);
+```
+
+### Express Router (ES Module)
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to count the number of companies
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM companies');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list company names in descending order of market value
+router.get('/names-by-market-value', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM companies ORDER BY market_value DESC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list company names whose headquarters are not "USA"
+router.get('/names-not-usa', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM companies WHERE headquarters != \'USA\'');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - The `companies` table has columns for `id`, `name`, `headquarters`, and `market_value`.
+   - `id` is a primary key with auto-increment.
+   - `name` and `headquarters` are strings, and `market_value` is a numeric type.
+
+2. **Express Router**:
+   - Three endpoints are defined:
+     - `/count`: Returns the total number of companies.
+     - `/names-by-market-value`: Returns the names of companies sorted by their market value in descending order.
+     - `/names-not-usa`: Returns the names of companies whose headquarters are not "USA".
+
+Each endpoint uses `pool.query` to execute SQL queries against the PostgreSQL database. The results are then returned as JSON responses.

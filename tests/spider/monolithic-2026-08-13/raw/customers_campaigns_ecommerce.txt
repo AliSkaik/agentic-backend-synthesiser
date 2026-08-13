@@ -1,0 +1,107 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE premises (
+    id SERIAL PRIMARY KEY,
+    type VARCHAR(255) NOT NULL,
+    details JSONB
+);
+
+CREATE TABLE products (
+    id SERIAL PRIMARY KEY,
+    category VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE mailshots (
+    id SERIAL PRIMARY KEY,
+    premise_id INT REFERENCES premises(id),
+    product_id INT REFERENCES products(id)
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. How many premises are there?
+router.get('/premises/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM premises');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. What are all the distinct premise types?
+router.get('/premises/types', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT DISTINCT type FROM premises');
+        res.json(result.rows.map(row => row.type));
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. Find the types and details for all premises and order by the premise type.
+router.get('/premises', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM premises ORDER BY type');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. Show each premise type and the number of premises in that type.
+router.get('/premises/types/count', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT type, COUNT(*) AS count
+            FROM premises
+            GROUP BY type
+            ORDER BY type
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 5. Show all distinct product categories along with the number of mailshots in each category.
+router.get('/products/categories/count', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT p.category, COUNT(m.id) AS count
+            FROM products p
+            JOIN mailshots m ON p.id = m.product_id
+            GROUP BY p.category
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Premises Table**: Stores information about different premises with a type and details.
+2. **Products Table**: Stores information about different products with a category and name.
+3. **Mailshots Table**: Links premises to products, indicating which products are being sent to which premises.
+
+The Express router provides endpoints to answer the following questions:
+- How many premises are there?
+- What are all the distinct premise types?
+- Find the types and details for all premises and order by the premise type.
+- Show each premise type and the number of premises in that type.
+- Show all distinct product categories along with the number of mailshots in each category.
+
+Each endpoint uses a `pool.query` to interact with the PostgreSQL database, ensuring efficient and safe querying.

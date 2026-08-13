@@ -1,0 +1,81 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE customers (
+    customer_id SERIAL PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    phone_number VARCHAR(20)
+);
+
+CREATE TABLE accounts (
+    account_id SERIAL PRIMARY KEY,
+    customer_id INT REFERENCES customers(customer_id),
+    account_open_date DATE NOT NULL,
+    account_name VARCHAR(100) NOT NULL,
+    account_details JSONB
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to show the number of accounts
+router.get('/accounts/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) AS account_count FROM accounts');
+        res.json({ account_count: result.rows[0].account_count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to show the number of customers who have an account
+router.get('/customers/with-accounts', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(DISTINCT customer_id) AS customer_count FROM accounts');
+        res.json({ customer_count: result.rows[0].customer_count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to show the id, date of account opened, account name, and other account details for all accounts
+router.get('/accounts', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                a.account_id,
+                a.account_open_date,
+                a.account_name,
+                a.account_details
+            FROM 
+                accounts a
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - The `customers` table stores customer details.
+   - The `accounts` table stores account details, including a foreign key to the `customer_id` in the `customers` table.
+
+2. **Express Router**:
+   - `/accounts/count`: Returns the total number of accounts.
+   - `/customers/with-accounts`: Returns the count of unique customers who have an account.
+   - `/accounts`: Returns details for all accounts, including their ID, open date, name, and other details stored in JSONB.
+
+This setup ensures that you can efficiently query the database for the required information using REST endpoints.

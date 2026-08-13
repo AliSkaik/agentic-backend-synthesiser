@@ -1,0 +1,64 @@
+import express from 'express';
+import { pool } from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to find the name and access counts of all documents, in alphabetic order of the document name.
+router.get('/documents', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT name, access_count
+            FROM documents
+            ORDER BY name ASC;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the names of all the documents, as well as the access counts of each, ordered alphabetically.
+router.get('/documents-with-counts', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT name, access_count
+            FROM documents
+            ORDER BY name ASC;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the name of the document that has been accessed the greatest number of times, as well as the count of how many times it has been accessed.
+router.get('/most-accessed-document', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT name, access_count
+            FROM documents
+            ORDER BY access_count DESC
+            LIMIT 1;
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the types of documents with more than 4 documents.
+router.get('/document-types-with-more-than-4', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT name
+            FROM documents
+            GROUP BY name
+            HAVING COUNT(*) > 4;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

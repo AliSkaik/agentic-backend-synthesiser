@@ -1,0 +1,63 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. How many addresses are there in the USA?
+router.get('/addresses/usa', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM addresses WHERE country = $1', ['USA']);
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. Show all distinct cities in the address record.
+router.get('/addresses/cities', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT DISTINCT city FROM addresses');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. Show each state and the number of addresses in each state.
+router.get('/addresses/states', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT state, COUNT(*) AS count FROM addresses GROUP BY state');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. Show names and phones of customers who do not have address information.
+router.get('/customers/no-address', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, phone FROM customers WHERE address_id IS NULL');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 5. Show the name of the customer who has the most orders.
+router.get('/customers/most-orders', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT c.name
+            FROM customers c
+            JOIN orders o ON c.customer_id = o.customer_id
+            GROUP BY c.customer_id, c.name
+            ORDER BY COUNT(o.order_id) DESC
+            LIMIT 1
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

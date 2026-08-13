@@ -1,0 +1,63 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to find the ids of orders whose status is 'Success'
+router.get('/orders/success', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT order_id FROM orders WHERE status = $1', ['Success']);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the name and price of the product that has been ordered the greatest number of times
+router.get('/products/most-ordered', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT p.product_id, p.name, p.price, COUNT(o.order_id) AS order_count
+            FROM orders o
+            JOIN products p ON o.product_id = p.product_id
+            GROUP BY p.product_id, p.name, p.price
+            ORDER BY order_count DESC
+            LIMIT 1
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the number of customers in total
+router.get('/customers/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(customer_id) AS customer_count FROM customers');
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the number of different payment methods
+router.get('/payment-methods/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(DISTINCT payment_method) AS payment_method_count FROM orders');
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to show the details of all trucks in the order of their license number
+router.get('/trucks', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT DISTINCT truck_license_number FROM orders ORDER BY truck_license_number');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

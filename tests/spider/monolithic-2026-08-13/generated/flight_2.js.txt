@@ -1,0 +1,77 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the country of an airline by name
+router.get('/airline-country/:name', async (req, res) => {
+    const { name } = req.params;
+    try {
+        const result = await pool.query(`
+            SELECT c.name AS country_name
+            FROM airlines a
+            JOIN countries c ON a.country_id = c.id
+            WHERE a.name = $1
+        `, [name]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Airline not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Endpoint to get the affiliated country of an airline by name
+router.get('/airline-affiliated-country/:name', async (req, res) => {
+    const { name } = req.params;
+    try {
+        const result = await pool.query(`
+            SELECT c.name AS affiliated_country_name
+            FROM airlines a
+            JOIN countries c ON a.country_id = c.id
+            WHERE a.name = $1
+        `, [name]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Airline not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Endpoint to get the abbreviation of an airline by name
+router.get('/airline-abbreviation/:name', async (req, res) => {
+    const { name } = req.params;
+    try {
+        const result = await pool.query(`
+            SELECT a.abbreviation AS airline_abbreviation
+            FROM airlines a
+            WHERE a.name = $1
+        `, [name]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Airline not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Endpoint to get the name and abbreviation of all airlines in USA
+router.get('/airlines-in-usa', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT a.name AS airline_name, a.abbreviation AS airline_abbreviation
+            FROM airlines a
+            JOIN countries c ON a.country_id = c.id
+            WHERE c.name = 'USA'
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+export default router;

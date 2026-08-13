@@ -1,0 +1,83 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE members (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    country VARCHAR(50) NOT NULL
+);
+```
+
+### Express Router (ES Module)
+
+```javascript
+import express from 'express';
+import { pool } from '../db.js';
+
+const router = express.Router();
+
+// 1. How many members are there?
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM members');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. List the names of members in ascending alphabetical order.
+router.get('/names', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM members ORDER BY name ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. What are the names and countries of members?
+router.get('/names-countries', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, country FROM members');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. Show the names of members whose country is "United States" or "Canada".
+router.get('/us-canada', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM members WHERE country IN ($1, $2)', ['United States', 'Canada']);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 5. Show the different countries and the number of members from each.
+router.get('/countries-count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT country, COUNT(*) AS count FROM members GROUP BY country');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Count Members**: The `/count` endpoint returns the total number of members in the database.
+2. **List Names Alphabetically**: The `/names` endpoint lists all member names sorted in ascending alphabetical order.
+3. **Names and Countries**: The `/names-countries` endpoint retrieves both the name and country of each member.
+4. **Members from US or Canada**: The `/us-canada` endpoint filters members whose country is either "United States" or "Canada".
+5. **Countries and Counts**: The `/countries-count` endpoint groups members by their countries and returns the count of members in each country.
+
+### Notes
+
+- Ensure that you have a `db.js` file that exports a PostgreSQL connection pool.
+- Make sure to handle any potential errors appropriately, such as database connection issues or query execution errors.

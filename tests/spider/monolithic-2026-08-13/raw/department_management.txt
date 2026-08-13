@@ -1,0 +1,119 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE departments (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    creation_year INT NOT NULL,
+    budget DECIMAL(10, 2) NOT NULL
+);
+
+CREATE TABLE employees (
+    id SERIAL PRIMARY KEY,
+    department_id INT REFERENCES departments(id),
+    name VARCHAR(255) NOT NULL,
+    born_state VARCHAR(255),
+    age INT,
+    rank INT
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. How many heads of the departments are older than 56?
+router.get('/heads-older-than-56', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT COUNT(*)
+            FROM employees
+            WHERE department_id IN (
+                SELECT id
+                FROM departments
+                WHERE name = 'Head'
+            ) AND age > 56;
+        `);
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 2. List the name, born state and age of the heads of departments ordered by age.
+router.get('/heads-by-age', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT e.name, e.born_state, e.age
+            FROM employees e
+            JOIN departments d ON e.department_id = d.id
+            WHERE d.name = 'Head'
+            ORDER BY e.age;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 3. List the creation year, name and budget of each department.
+router.get('/departments', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT creation_year, name, budget
+            FROM departments;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 4. What are the maximum and minimum budget of the departments?
+router.get('/budget-extremes', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT MAX(budget) AS max_budget, MIN(budget) AS min_budget
+            FROM departments;
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 5. What is the average number of employees of the departments whose rank is between 10 and 15?
+router.get('/average-employees', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT AVG(rank)
+            FROM employees
+            WHERE rank BETWEEN 10 AND 15;
+        `);
+        res.json({ average_rank: result.rows[0].avg });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Schema Creation**:
+   - The `departments` table stores information about each department, including its creation year and budget.
+   - The `employees` table stores information about each employee, including their name, born state, age, rank, and the department they belong to.
+
+2. **Express Router Endpoints**:
+   - `/heads-older-than-56`: Counts the number of employees who are heads (assuming a department with the name 'Head') and are older than 56.
+   - `/heads-by-age`: Lists the names, born states, and ages of all employees who are heads, ordered by age.
+   - `/departments`: Lists the creation year, name, and budget for each department.
+   - `/budget-extremes`: Returns the maximum and minimum budgets among all departments.
+   - `/average-employees`: Calculates the average rank (assuming a higher rank indicates more importance) of employees whose ranks are between 10 and 15.
+
+Each endpoint uses `pool.query` to execute SQL queries against the PostgreSQL database. The results are then returned as JSON responses.

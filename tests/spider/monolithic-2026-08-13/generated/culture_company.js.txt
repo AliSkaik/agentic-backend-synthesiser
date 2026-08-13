@@ -1,0 +1,43 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to count the number of book clubs
+router.get('/book-clubs/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM book_clubs');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to show titles and authors or editors for all books made after 1989
+router.get('/books/after-1989', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT title, author, editor 
+            FROM books 
+            WHERE publication_year > 1989;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to show all distinct publishers for books
+router.get('/books/publishers', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT DISTINCT publisher 
+            FROM books;
+        `);
+        res.json(result.rows.map(row => row.publisher));
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

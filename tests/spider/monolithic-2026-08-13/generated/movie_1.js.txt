@@ -1,0 +1,63 @@
+import express from 'express';
+import { pool } from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to find the titles of all movies directed by Steven Spielberg
+router.get('/directed-by/:director', async (req, res) => {
+    const director = req.params.director;
+    try {
+        const result = await pool.query('SELECT title FROM movies WHERE director = $1', [director]);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the names of all movies directed by Steven Spielberg
+router.get('/directed-by/:director', async (req, res) => {
+    const director = req.params.director;
+    try {
+        const result = await pool.query('SELECT title FROM movies WHERE director = $1', [director]);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the name of the movie produced after 2000 and directed by James Cameron
+router.get('/after-2000/directed-by/:director', async (req, res) => {
+    const director = req.params.director;
+    try {
+        const result = await pool.query('SELECT title FROM movies WHERE year > 2000 AND director = $1', [director]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'No movie found' });
+        }
+        res.json(result.rows[0].title);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the titles of all movies that James Cameron directed after 2000
+router.get('/after-2000/directed-by/:director', async (req, res) => {
+    const director = req.params.director;
+    try {
+        const result = await pool.query('SELECT title FROM movies WHERE year > 2000 AND director = $1', [director]);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find how many movies were made before 2000
+router.get('/before-2000/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM movies WHERE year < 2000');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

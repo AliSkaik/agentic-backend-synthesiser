@@ -1,0 +1,50 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to count total number of apartment bookings
+router.get('/bookings/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM bookings');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to show start dates and end dates of all apartment bookings
+router.get('/bookings', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT start_date, end_date FROM bookings');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to show the start date and end date of each apartment booking
+router.get('/bookings/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query('SELECT start_date, end_date FROM bookings WHERE id = $1', [id]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Booking not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to show all distinct building descriptions
+router.get('/buildings/distinct', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT DISTINCT description FROM buildings');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

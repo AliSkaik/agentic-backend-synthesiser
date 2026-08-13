@@ -1,0 +1,67 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE teachers (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    age INT NOT NULL,
+    hometown VARCHAR(100)
+);
+```
+
+### Express Router (ES Module)
+
+```javascript
+import express from 'express';
+import { pool } from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the total count of teachers
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM teachers');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list the names of teachers in ascending order of age
+router.get('/names-ascending', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM teachers ORDER BY age ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the age and hometown of teachers
+router.get('/age-hometown', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT age, hometown FROM teachers');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **PostgreSQL Schema**:
+   - A `teachers` table is created with columns for `id`, `name`, `age`, and `hometown`.
+   - The `id` column is a primary key and auto-increments.
+
+2. **Express Router**:
+   - Three endpoints are defined:
+     - `/count`: Returns the total count of teachers.
+     - `/names-ascending`: Returns the names of teachers ordered by age in ascending order.
+     - `/age-hometown`: Returns the age and hometown of all teachers.
+   - Each endpoint uses `pool.query` to execute SQL queries against the PostgreSQL database.
+   - Error handling is included to catch any issues that may occur during the query execution.
+
+This setup ensures that you can interact with your teacher data through RESTful endpoints, making it easy to retrieve specific information as required.

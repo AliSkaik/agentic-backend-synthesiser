@@ -1,0 +1,225 @@
+Sure! Below is the PostgreSQL schema for an IMDB-like database and an Express router implementing REST endpoints to interact with this schema.
+
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE movies (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    release_year INT,
+    rating DECIMAL(3, 1),
+    genre VARCHAR(100)
+);
+
+CREATE TABLE actors (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE movie_actors (
+    movie_id INT REFERENCES movies(id),
+    actor_id INT REFERENCES actors(id),
+    PRIMARY KEY (movie_id, actor_id)
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Get all movies
+router.get('/movies', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM movies');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get a single movie by ID
+router.get('/movies/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await pool.query('SELECT * FROM movies WHERE id = $1', [id]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Movie not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Create a new movie
+router.post('/movies', async (req, res) => {
+    const { title, release_year, rating, genre } = req.body;
+    try {
+        const result = await pool.query(
+            'INSERT INTO movies (title, release_year, rating, genre) VALUES ($1, $2, $3, $4) RETURNING *',
+            [title, release_year, rating, genre]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Update a movie
+router.put('/movies/:id', async (req, res) => {
+    const { id } = req.params;
+    const { title, release_year, rating, genre } = req.body;
+    try {
+        const result = await pool.query(
+            'UPDATE movies SET title = $1, release_year = $2, rating = $3, genre = $4 WHERE id = $5 RETURNING *',
+            [title, release_year, rating, genre, id]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Movie not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Delete a movie
+router.delete('/movies/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await pool.query('DELETE FROM movies WHERE id = $1 RETURNING *', [id]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Movie not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get all actors
+router.get('/actors', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM actors');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get a single actor by ID
+router.get('/actors/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await pool.query('SELECT * FROM actors WHERE id = $1', [id]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Actor not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Create a new actor
+router.post('/actors', async (req, res) => {
+    const { name } = req.body;
+    try {
+        const result = await pool.query(
+            'INSERT INTO actors (name) VALUES ($1) RETURNING *',
+            [name]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Update an actor
+router.put('/actors/:id', async (req, res) => {
+    const { id } = req.params;
+    const { name } = req.body;
+    try {
+        const result = await pool.query(
+            'UPDATE actors SET name = $1 WHERE id = $2 RETURNING *',
+            [name, id]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Actor not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Delete an actor
+router.delete('/actors/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await pool.query('DELETE FROM actors WHERE id = $1 RETURNING *', [id]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Actor not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get all movies for an actor
+router.get('/actors/:id/movies', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await pool.query(
+            'SELECT m.* FROM movies m JOIN movie_actors ma ON m.id = ma.movie_id WHERE ma.actor_id = $1',
+            [id]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get all actors for a movie
+router.get('/movies/:id/actors', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await pool.query(
+            'SELECT a.* FROM actors a JOIN movie_actors ma ON a.id = ma.actor_id WHERE ma.movie_id = $1',
+            [id]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Movies Table**: Stores information about movies.
+2. **Actors Table**: Stores information about actors.
+3. **Movie_Actors Table**: A junction table to handle many-to-many relationships between movies and actors.
+
+The Express router provides endpoints for:
+- Getting all movies
+- Getting a single movie by ID
+- Creating a new movie
+- Updating an existing movie
+- Deleting a movie
+- Getting all actors
+- Getting a single actor by ID
+- Creating a new actor
+- Updating an existing actor
+- Deleting an actor
+- Getting all movies for a specific actor
+- Getting all actors for a specific movie
+
+Each endpoint uses `pool.query` to interact with the PostgreSQL database.

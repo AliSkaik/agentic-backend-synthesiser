@@ -1,0 +1,95 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE individuals (
+    id SERIAL PRIMARY KEY,
+    first_name VARCHAR(100) NOT NULL,
+    middle_name VARCHAR(100),
+    last_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE forms (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(100)
+);
+
+CREATE TABLE party_forms (
+    id SERIAL PRIMARY KEY,
+    form_id INT REFERENCES forms(id),
+    party_name VARCHAR(255) NOT NULL
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to list every individual's first name, middle name and last name in alphabetical order by last name
+router.get('/individuals', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT first_name, middle_name, last_name 
+            FROM individuals 
+            ORDER BY last_name;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list all the types of forms
+router.get('/forms/types', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT DISTINCT type 
+            FROM forms;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the name of the most popular party form
+router.get('/party-forms/most-popular', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT p.name 
+            FROM forms f 
+            JOIN party_forms pf ON f.id = pf.form_id 
+            GROUP BY p.name 
+            ORDER BY COUNT(*) DESC 
+            LIMIT 1;
+        `);
+        if (result.rows.length === 0) {
+            res.status(404).json({ message: 'No party form found' });
+        } else {
+            res.json(result.rows[0]);
+        }
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - `individuals` table stores information about individuals with fields for first name, middle name, and last name.
+   - `forms` table stores different types of forms with a unique identifier and type.
+   - `party_forms` table links forms to specific parties.
+
+2. **Express Router**:
+   - `/individuals`: Returns all individuals sorted by their last name in alphabetical order.
+   - `/forms/types`: Returns distinct types of forms available.
+   - `/party-forms/most-popular`: Finds the most popular party form based on the number of occurrences.
+
+This setup ensures that you can query the database for the required information efficiently.

@@ -1,0 +1,5 @@
+CREATE TABLE enzymes (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    location TEXT NOT NULL
+);

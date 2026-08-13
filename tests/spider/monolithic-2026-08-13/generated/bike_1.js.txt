@@ -1,0 +1,48 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get dates when max temperature was higher than 85
+router.get('/dates-max-temp-higher-than-85', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT date
+            FROM weather_data
+            WHERE max_temperature > 85;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get names of stations with latitude lower than 37.5
+router.get('/stations-latitude-lower-than-37.5', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT name
+            FROM stations
+            WHERE latitude < 37.5;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get highest latitude among stations for each city
+router.get('/highest-latitude-by-city', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT city, MAX(latitude) AS max_latitude
+            FROM stations
+            GROUP BY city;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

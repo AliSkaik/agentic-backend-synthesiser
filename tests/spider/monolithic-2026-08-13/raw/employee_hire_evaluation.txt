@@ -1,0 +1,105 @@
+### PostgreSQL Schema
+
+First, let's design the database schema for the employee hire evaluation system.
+
+```sql
+CREATE TABLE employees (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    age INT NOT NULL,
+    city VARCHAR(50) NOT NULL
+);
+```
+
+This table includes:
+- `id`: A unique identifier for each employee.
+- `name`: The name of the employee.
+- `age`: The age of the employee.
+- `city`: The city where the employee is from.
+
+### Express Router
+
+Next, let's create an Express router to handle REST endpoints for querying the database. We'll use a PostgreSQL connection pool imported from `../db.js`.
+
+```javascript
+import express from 'express';
+import { Pool } from 'pg';
+
+const router = express.Router();
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+});
+
+// Middleware to parse JSON bodies
+router.use(express.json());
+
+// Endpoint to get the total number of employees
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM employees');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to sort employee names by their age in ascending order
+router.get('/sort-by-age', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM employees ORDER BY age ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list the names of employees and sort in ascending order of age
+router.get('/list-by-age', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM employees ORDER BY age ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to count the number of employees from each city
+router.get('/count-by-city', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT city, COUNT(*) AS count FROM employees GROUP BY city');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - The `employees` table is created with columns for `id`, `name`, `age`, and `city`.
+
+2. **Express Router**:
+   - We define an Express router to handle different endpoints.
+   - Each endpoint queries the database using `pool.query` from the PostgreSQL connection pool.
+   - The results are returned as JSON.
+
+### Usage
+
+To use this router, you would typically import it into your main application file and mount it:
+
+```javascript
+import express from 'express';
+import employeeRouter from './employeeRouter';
+
+const app = express();
+app.use('/api/employees', employeeRouter);
+
+app.listen(3000, () => {
+    console.log('Server is running on port 3000');
+});
+```
+
+This setup allows you to interact with the employee data through RESTful endpoints.

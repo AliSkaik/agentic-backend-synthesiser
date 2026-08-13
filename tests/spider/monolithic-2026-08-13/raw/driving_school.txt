@@ -1,0 +1,59 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE vehicles (
+    id SERIAL PRIMARY KEY,
+    make VARCHAR(255) NOT NULL,
+    model VARCHAR(255) NOT NULL,
+    year INT NOT NULL,
+    license_plate VARCHAR(20) UNIQUE NOT NULL
+);
+```
+
+### Express Router (ES Module)
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// List all vehicle ids
+router.get('/vehicles/ids', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id FROM vehicles');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Show the detail of vehicle with id 1
+router.get('/vehicles/1', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM vehicles WHERE id = $1', [1]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Vehicle not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **PostgreSQL Schema**:
+   - The `vehicles` table is created with columns for `id`, `make`, `model`, `year`, and `license_plate`.
+   - `id` is a SERIAL type, which automatically increments and serves as the primary key.
+   - `license_plate` is UNIQUE to ensure each vehicle has a unique license plate.
+
+2. **Express Router**:
+   - The router defines two endpoints:
+     - `/vehicles/ids`: Returns an array of all vehicle IDs.
+     - `/vehicles/1`: Returns the details of the vehicle with ID 1.
+   - Both endpoints use `pool.query` to interact with the database.
+   - Error handling is included to catch and respond appropriately to any issues that arise during database queries.

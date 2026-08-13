@@ -1,0 +1,46 @@
+import express from 'express';
+import { pool } from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the total count of enzymes
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM enzymes');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the number of kinds of enzymes
+router.get('/kinds', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(DISTINCT name) FROM enzymes');
+        res.json({ kinds: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list the names of enzymes in descending lexicographical order
+router.get('/names-desc', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM enzymes ORDER BY name DESC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list the names and locations of enzymes in descending order
+router.get('/names-locations-desc', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, location FROM enzymes ORDER BY name DESC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

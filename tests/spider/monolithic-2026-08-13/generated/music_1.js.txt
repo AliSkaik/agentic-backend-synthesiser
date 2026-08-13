@@ -1,0 +1,62 @@
+import express from 'express';
+import { pool } from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the name of the song released in the most recent year
+router.get('/most-recent-year', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT name FROM songs
+            WHERE release_year = (
+                SELECT MAX(release_year) FROM songs
+            )
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the name of the song released most recently
+router.get('/most-recent', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT name FROM songs
+            ORDER BY release_year DESC, id DESC
+            LIMIT 1
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the id of the longest song
+router.get('/longest-song-id', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT id FROM songs
+            ORDER BY duration_seconds DESC
+            LIMIT 1
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the names of all English songs
+router.get('/english-songs', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT name FROM songs
+            WHERE language = 'English'
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

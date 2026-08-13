@@ -1,0 +1,75 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE customers (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    phone_number VARCHAR(15) NOT NULL UNIQUE,
+    city VARCHAR(255),
+    type_code VARCHAR(50)
+);
+```
+
+### Express Router (ES Module)
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. Count the number of customers
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM customers');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. Find the emails and phone numbers of all the customers, ordered by email address and phone number
+router.get('/all', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT email, phone_number FROM customers ORDER BY email, phone_number');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. Which city has the least number of customers whose type code is "Good Credit Rating"
+router.get('/least-customers', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT city
+            FROM customers
+            WHERE type_code = 'Good Credit Rating'
+            GROUP BY city
+            ORDER BY COUNT(*) ASC
+            LIMIT 1
+        `);
+        res.json(result.rows[0] || { city: null });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Count the number of customers**:
+   - The `/count` endpoint queries the `customers` table to count the total number of rows and returns it as a JSON object.
+
+2. **Find the emails and phone numbers of all the customers, ordered by email address and phone number**:
+   - The `/all` endpoint retrieves all customer emails and phone numbers from the `customers` table and orders them first by email and then by phone number.
+
+3. **Which city has the least number of customers whose type code is "Good Credit Rating"**:
+   - The `/least-customers` endpoint filters customers with a `type_code` of "Good Credit Rating", groups them by city, counts the number of customers in each city, orders the cities by the count in ascending order, and returns the city with the least number of such customers.
+
+### Notes
+
+- Ensure that you have a PostgreSQL database set up and that the connection pool (`pool`) is correctly configured to connect to your database.
+- The `db.js` file should export a properly configured PostgreSQL connection pool.

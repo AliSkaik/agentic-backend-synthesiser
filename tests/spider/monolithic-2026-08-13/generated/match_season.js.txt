@@ -1,0 +1,36 @@
+import express from 'express';
+import { pool } from '../db.js';
+
+const router = express.Router();
+
+// 1. Count the number of countries
+router.get('/count-countries', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM countries');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. Show the country name and capital of all countries
+router.get('/all-countries', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, capital FROM countries');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. Show all official native languages that contain the word "English"
+router.get('/english-languages', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT DISTINCT official_language FROM countries WHERE official_language LIKE %$1%', ['%English%']);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

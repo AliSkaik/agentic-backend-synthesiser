@@ -1,0 +1,96 @@
+### PostgreSQL Schema
+
+Here is the PostgreSQL schema for apartment rentals:
+
+```sql
+CREATE TABLE buildings (
+    id SERIAL PRIMARY KEY,
+    description TEXT NOT NULL
+);
+
+CREATE TABLE apartments (
+    id SERIAL PRIMARY KEY,
+    building_id INT REFERENCES buildings(id),
+    room_number VARCHAR(50) NOT NULL,
+    capacity INT NOT NULL
+);
+
+CREATE TABLE bookings (
+    id SERIAL PRIMARY KEY,
+    apartment_id INT REFERENCES apartments(id),
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL
+);
+```
+
+### Express Router
+
+Here is the Express router implementing REST endpoints for the schema:
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to count total number of apartment bookings
+router.get('/bookings/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM bookings');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to show start dates and end dates of all apartment bookings
+router.get('/bookings', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT start_date, end_date FROM bookings');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to show the start date and end date of each apartment booking
+router.get('/bookings/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query('SELECT start_date, end_date FROM bookings WHERE id = $1', [id]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Booking not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to show all distinct building descriptions
+router.get('/buildings/distinct', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT DISTINCT description FROM buildings');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - `buildings` table stores information about different buildings.
+   - `apartments` table stores information about apartments within each building.
+   - `bookings` table stores information about bookings for specific apartments.
+
+2. **Express Router**:
+   - `/bookings/count`: Returns the total number of apartment bookings.
+   - `/bookings`: Returns a list of all start and end dates of apartment bookings.
+   - `/bookings/:id`: Returns the start and end date of a specific booking by its ID.
+   - `/buildings/distinct`: Returns a list of distinct building descriptions.
+
+This setup allows you to interact with your PostgreSQL database through RESTful endpoints using Node.js.

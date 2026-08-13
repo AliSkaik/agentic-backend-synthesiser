@@ -1,0 +1,52 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Get the total number of entrepreneurs
+router.get('/entrepreneurs/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM entrepreneurs');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// List the companies of entrepreneurs in descending order of money requested
+router.get('/entrepreneurs/companies', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT c.id, c.name, c.money_requested, e.name AS entrepreneur_name
+            FROM companies c
+            JOIN entrepreneurs e ON c.entrepreneur_id = e.id
+            ORDER BY c.money_requested DESC;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// List the companies and the investors of entrepreneurs
+router.get('/entrepreneurs/companies-investors', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                c.id AS company_id,
+                c.name AS company_name,
+                c.money_requested,
+                e.name AS entrepreneur_name,
+                i.investor_name,
+                i.investment_amount
+            FROM companies c
+            JOIN entrepreneurs e ON c.entrepreneur_id = e.id
+            LEFT JOIN investors i ON c.id = i.company_id;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

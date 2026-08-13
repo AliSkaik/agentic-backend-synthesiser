@@ -1,0 +1,67 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE documents (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    template_id INT
+);
+```
+
+### Express Router (ES Module)
+
+```javascript
+import express from 'express';
+import { pool } from '../db.js';
+
+const router = express.Router();
+
+// 1. Count the number of documents
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM documents');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. List document IDs, document names, and document descriptions for all documents
+router.get('/list', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id, name, description FROM documents');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. What is the document name and template id for document with description with the letter 'w' in it?
+router.get('/search', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, template_id FROM documents WHERE description LIKE %$1%', ['%w%']);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Count the number of documents**:
+   - The `/count` endpoint queries the `documents` table to count the total number of rows and returns it as a JSON object.
+
+2. **List document IDs, document names, and document descriptions for all documents**:
+   - The `/list` endpoint retrieves all documents from the `documents` table and returns their IDs, names, and descriptions in a JSON array.
+
+3. **What is the document name and template id for document with description with the letter 'w' in it?**:
+   - The `/search` endpoint queries the `documents` table to find documents where the description contains the letter 'w'. It returns the document names and their corresponding template IDs as a JSON array.
+
+### Notes
+
+- Ensure that you have a PostgreSQL database set up and that the connection pool (`pool`) is correctly configured in your `db.js` file.
+- The SQL queries use parameterized statements to prevent SQL injection attacks.

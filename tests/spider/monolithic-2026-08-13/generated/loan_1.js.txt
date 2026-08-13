@@ -1,0 +1,41 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to count the number of bank branches
+router.get('/branches/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM bank_branches');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to count the total number of customers across all banks
+router.get('/customers/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM customers');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to count the number of customers in banks at New York City
+router.get('/customers/new-york-city', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT COUNT(*) 
+            FROM customers 
+            JOIN bank_branches ON customers.branch_id = bank_branches.branch_id 
+            WHERE bank_branches.city = 'New York City'
+        `);
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

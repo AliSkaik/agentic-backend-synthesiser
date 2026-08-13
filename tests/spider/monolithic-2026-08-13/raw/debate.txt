@@ -1,0 +1,102 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE people (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    age INT NOT NULL
+);
+
+CREATE TABLE debates (
+    id SERIAL PRIMARY KEY,
+    date DATE NOT NULL,
+    venue VARCHAR(100) NOT NULL,
+    audience_count INT NOT NULL
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. How many debates are there?
+router.get('/debates/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM debates');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. List the venues of debates in ascending order of the number of audience.
+router.get('/debates/venues', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT venue
+            FROM debates
+            ORDER BY audience_count ASC;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. What are the date and venue of each debate?
+router.get('/debates/details', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT date, venue
+            FROM debates;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. List the dates of debates with number of audience bigger than 150.
+router.get('/debates/audience-gt-150', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT date
+            FROM debates
+            WHERE audience_count > 150;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 5. Show the names of people aged either 35 or 36.
+router.get('/people/age-35-or-36', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT name
+            FROM people
+            WHERE age IN (35, 36);
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **debates/count**: Returns the total number of debates.
+2. **debates/venues**: Lists all venues in ascending order based on the audience count.
+3. **debates/details**: Retrieves the date and venue for each debate.
+4. **debates/audience-gt-150**: Lists dates where the audience count is greater than 150.
+5. **people/age-35-or-36**: Returns names of people aged either 35 or 36.
+
+Each endpoint uses `pool.query` to execute SQL queries and returns the results in JSON format. Error handling is included to catch any issues that may arise during database operations.

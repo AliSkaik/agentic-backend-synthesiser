@@ -1,0 +1,36 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the names of all customers
+router.get('/customers/names', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT first_name, last_name FROM customers');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the total number of distinct customers
+router.get('/customers/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(DISTINCT customer_id) AS total_customers FROM customers');
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the average amount of items ordered in each order
+router.get('/orders/average-items', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT AVG(items_ordered) AS average_items FROM orders');
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

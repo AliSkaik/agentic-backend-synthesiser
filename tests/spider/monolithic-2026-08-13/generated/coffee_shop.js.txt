@@ -1,0 +1,65 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. How many members have the black membership card?
+router.get('/members/black-card', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM members WHERE membership_card = $1', ['black']);
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. Find the number of members living in each address.
+router.get('/members/address-count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT address, COUNT(*) FROM members GROUP BY address');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. Give me the names of members whose address is in Harford or Waterbury.
+router.get('/members/address-filter', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM members WHERE address IN ($1, $2)', ['Harford', 'Waterbury']);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. Find the ids and names of members who are under age 30 or with black membership card.
+router.get('/members/age-or-card', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT id, name 
+            FROM members 
+            WHERE age < $1 OR membership_card = $2
+        `, [30, 'black']);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 5. Find the purchase time, age and address of each member, and show the results in the order of purchase time.
+router.get('/purchases/details', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT p.purchase_time, m.age, m.address 
+            FROM purchases p
+            JOIN members m ON p.member_id = m.id
+            ORDER BY p.purchase_time
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

@@ -1,0 +1,72 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. Find all the phone numbers.
+router.get('/phone-numbers', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT phone_number FROM customers');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. What are all the phone numbers?
+router.get('/phone-numbers', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT phone_number FROM customers');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. What are the customer phone numbers under the policy "Life Insurance"?
+router.get('/policy/Life-Insurance/phone-numbers', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT c.phone_number
+            FROM customers c
+            JOIN policies p ON c.customer_id = p.customer_id
+            WHERE p.policy_type = 'Life Insurance'
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. What are the phone numbers of customers using the policy with the code "Life Insurance"?
+router.get('/policy/Life-Insurance/code/phone-numbers', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT c.phone_number
+            FROM customers c
+            JOIN policies p ON c.customer_id = p.customer_id
+            WHERE p.policy_code = 'Life Insurance'
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 5. Which policy type has the most records in the database?
+router.get('/policy-type/most-records', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT policy_type, COUNT(*) AS record_count
+            FROM policies
+            GROUP BY policy_type
+            ORDER BY record_count DESC
+            LIMIT 1
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

@@ -1,0 +1,54 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to list every individual's first name, middle name and last name in alphabetical order by last name
+router.get('/individuals', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT first_name, middle_name, last_name 
+            FROM individuals 
+            ORDER BY last_name;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list all the types of forms
+router.get('/forms/types', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT DISTINCT type 
+            FROM forms;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the name of the most popular party form
+router.get('/party-forms/most-popular', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT p.name 
+            FROM forms f 
+            JOIN party_forms pf ON f.id = pf.form_id 
+            GROUP BY p.name 
+            ORDER BY COUNT(*) DESC 
+            LIMIT 1;
+        `);
+        if (result.rows.length === 0) {
+            res.status(404).json({ message: 'No party form found' });
+        } else {
+            res.json(result.rows[0]);
+        }
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

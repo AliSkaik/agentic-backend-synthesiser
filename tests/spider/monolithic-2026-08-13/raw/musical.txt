@@ -1,0 +1,84 @@
+### PostgreSQL Schema
+
+First, let's design the database schema for the musical system. We'll assume we have two tables: `actors` and `characters`.
+
+```sql
+CREATE TABLE actors (
+    actor_id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    age INT,
+    gender CHAR(1)
+);
+
+CREATE TABLE characters (
+    character_id SERIAL PRIMARY KEY,
+    actor_id INT REFERENCES actors(actor_id),
+    character_name VARCHAR(100) NOT NULL,
+    duration INTERVAL
+);
+```
+
+### Express Router
+
+Next, let's create an Express router to handle the REST endpoints for this schema. We'll use a PostgreSQL connection pool imported from `../db.js`.
+
+```javascript
+import express from 'express';
+import { Pool } from 'pg';
+
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+});
+
+const router = express.Router();
+
+// Endpoint to count the number of actors
+router.get('/actors/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM actors');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list the names of actors in ascending alphabetical order
+router.get('/actors', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM actors ORDER BY name ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the names of actors and their characters with durations
+router.get('/actors/characters', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT a.name AS actor_name, c.character_name, EXTRACT(EPOCH FROM c.duration) AS duration_seconds
+            FROM actors a
+            JOIN characters c ON a.actor_id = c.actor_id
+            ORDER BY a.name ASC;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - The `actors` table stores information about actors, including their ID, name, age, and gender.
+   - The `characters` table stores information about characters, including their ID, the actor they belong to (as a foreign key), character name, and duration.
+
+2. **Express Router**:
+   - `/actors/count`: Returns the total number of actors in the database.
+   - `/actors`: Returns a list of all actor names sorted alphabetically.
+   - `/actors/characters`: Returns a list of actor names along with their characters and durations, sorted by actor name.
+
+This setup ensures that you can interact with your PostgreSQL database using RESTful endpoints from an Express application.

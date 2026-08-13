@@ -1,0 +1,73 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE dorms (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    capacity INT NOT NULL,
+    gender CHAR(1) CHECK (gender IN ('M', 'F'))
+);
+
+CREATE TABLE students (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    sex CHAR(1) CHECK (sex IN ('M', 'F')),
+    age INT,
+    dorm_id INT REFERENCES dorms(id)
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to find the names of all-female dorms
+router.get('/female-dorms', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM dorms WHERE gender = \'F\'');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the names of all dorms that can accommodate more than 300 students
+router.get('/large-dorms', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM dorms WHERE capacity > 300');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the number of female students below 25 years old
+router.get('/female-students-under-25', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM students WHERE sex = \'F\' AND age < 25');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - `dorms` table with columns for `id`, `name`, `capacity`, and `gender`.
+   - `students` table with columns for `id`, `name`, `sex`, `age`, and a foreign key `dorm_id` referencing the `id` in the `dorms` table.
+
+2. **Express Router**:
+   - Three endpoints are defined:
+     - `/female-dorms`: Returns the names of all dorms that are designated for female students.
+     - `/large-dorms`: Returns the names of all dorms that can accommodate more than 300 students.
+     - `/female-students-under-25`: Returns the count of female students who are below 25 years old.
+
+Each endpoint uses `pool.query` to execute a SQL query against the PostgreSQL database and returns the results in JSON format. Error handling is included to catch any issues that may arise during the database operations.

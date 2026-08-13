@@ -1,0 +1,62 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the total number of video games
+router.get('/total-games', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM games');
+        res.json({ total_games: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the number of video games a user has
+router.get('/user-games/:userId', async (req, res) => {
+    const { userId } = req.params;
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM games WHERE user_id = $1', [userId]);
+        res.json({ user_games: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the total number of video game types
+router.get('/total-types', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM game_types');
+        res.json({ total_types: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the count of different game types
+router.get('/type-counts', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT gt.name AS type_name, COUNT(g.id) AS game_count
+            FROM games g
+            JOIN game_types gt ON g.type_id = gt.id
+            GROUP BY gt.name
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to show all video game types
+router.get('/types', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM game_types');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

@@ -1,0 +1,64 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Find the id of the item whose title is "orange"
+router.get('/items/orange', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id FROM items WHERE title = $1', ['orange']);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Item not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// List all information in the item table
+router.get('/items', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM items');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Find the number of reviews
+router.get('/reviews/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM reviews');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// How many users are there?
+router.get('/users/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM users');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Find the average and maximum rating of all reviews
+router.get('/reviews/stats', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                AVG(rating) AS avg_rating,
+                MAX(rating) AS max_rating
+            FROM reviews
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+export default router;

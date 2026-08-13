@@ -1,0 +1,40 @@
+import express from 'express';
+import { Pool } from 'pg';
+
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+});
+
+const router = express.Router();
+
+// Endpoint to count the number of artists
+router.get('/count-artists', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM artists');
+        res.json({ count: parseInt(result.rows[0].count) });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list the age of all music artists
+router.get('/ages-of-artists', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT EXTRACT(YEAR FROM AGE(birth_date)) AS age FROM artists');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the average age of all artists
+router.get('/average-age', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT AVG(EXTRACT(YEAR FROM AGE(birth_date))) AS average_age FROM artists');
+        res.json({ average_age: parseFloat(result.rows[0].average_age.toFixed(2)) });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

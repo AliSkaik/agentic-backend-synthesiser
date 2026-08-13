@@ -1,0 +1,36 @@
+import express from 'express';
+import { pool } from '../db.js';
+
+const router = express.Router();
+
+// 1. Count the number of documents
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM documents');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. List document IDs, document names, and document descriptions for all documents
+router.get('/list', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id, name, description FROM documents');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. What is the document name and template id for document with description with the letter 'w' in it?
+router.get('/search', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, template_id FROM documents WHERE description LIKE %$1%', ['%w%']);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

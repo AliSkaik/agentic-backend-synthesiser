@@ -1,0 +1,70 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE technicians (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    age INT NOT NULL,
+    team VARCHAR(50),
+    starting_year INT
+);
+```
+
+### Express Router (ES Module)
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. How many technicians are there?
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM technicians');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. List the names of technicians in ascending order of age
+router.get('/names-by-age', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM technicians ORDER BY age ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. What are the team and starting year of technicians?
+router.get('/team-and-starting-year', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, team, starting_year FROM technicians');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema (`technicians` table)**:
+   - `id`: A unique identifier for each technician.
+   - `name`: The name of the technician.
+   - `age`: The age of the technician.
+   - `team`: The team to which the technician belongs.
+   - `starting_year`: The year in which the technician started working.
+
+2. **Express Router**:
+   - `/count`: Returns the total number of technicians.
+   - `/names-by-age`: Returns a list of technician names sorted by age in ascending order.
+   - `/team-and-starting-year`: Returns the name, team, and starting year of each technician.
+
+### Notes
+- Ensure that you have a PostgreSQL database set up and that the `pg` package is installed in your Node.js project.
+- The `db.js` file should contain the connection pool setup for connecting to your PostgreSQL database.

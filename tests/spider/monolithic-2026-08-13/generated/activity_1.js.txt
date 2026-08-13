@@ -1,0 +1,40 @@
+import express from 'express';
+import { Pool } from 'pg';
+
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+});
+
+const router = express.Router();
+
+// Endpoint to get the total number of faculty members
+router.get('/faculty/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM faculty');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the distinct ranks of faculty
+router.get('/faculty/ranks', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT DISTINCT rank FROM faculty');
+        res.json(result.rows.map(row => row.rank));
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the distinct buildings with faculty rooms
+router.get('/faculty/buildings', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT DISTINCT building FROM faculty');
+        res.json(result.rows.map(row => row.building));
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

@@ -1,0 +1,96 @@
+### PostgreSQL Schema
+
+Here is the PostgreSQL schema for the `icfp` system:
+
+```sql
+CREATE TABLE authors (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    institution_id INT,
+    FOREIGN KEY (institution_id) REFERENCES institutions(id)
+);
+
+CREATE TABLE institutions (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE papers (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    author_id INT,
+    FOREIGN KEY (author_id) REFERENCES authors(id)
+);
+```
+
+### Express Router
+
+Here is the Express router implementing REST endpoints for the schema:
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to count the number of authors
+router.get('/authors/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM authors');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to count the number of institutions
+router.get('/institutions/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM institutions');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to count the number of papers
+router.get('/papers/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM papers');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - `authors` table with columns for `id`, `name`, and `institution_id`.
+   - `institutions` table with columns for `id` and `name`.
+   - `papers` table with columns for `id`, `title`, and `author_id`.
+
+2. **Express Router**:
+   - Three endpoints (`/authors/count`, `/institutions/count`, `/papers/count`) to count the number of authors, institutions, and papers respectively.
+   - Each endpoint queries the database using `pool.query` and returns the count in JSON format.
+
+Make sure you have a PostgreSQL connection pool set up in your `db.js` file. Here is an example of how you might set that up:
+
+```javascript
+import { Pool } from 'pg';
+
+const pool = new Pool({
+    user: 'your_username',
+    host: 'localhost',
+    database: 'icfp_db',
+    password: 'your_password',
+    port: 5432,
+});
+
+export default pool;
+```
+
+Replace `your_username`, `your_password`, and other details with your actual PostgreSQL credentials.

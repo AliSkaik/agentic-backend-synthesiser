@@ -1,0 +1,79 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE devices (
+    id SERIAL PRIMARY KEY,
+    carrier VARCHAR(255) NOT NULL,
+    software_platform VARCHAR(255) NOT NULL
+);
+```
+
+### Express Router (ES Module)
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. How many devices are there?
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM devices');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. List the carriers of devices in ascending alphabetical order.
+router.get('/carriers', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT DISTINCT carrier FROM devices ORDER BY carrier ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. What are the different carriers for devices, listed in alphabetical order?
+router.get('/carriers-alphabetical', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT DISTINCT carrier FROM devices ORDER BY carrier ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. What are the carriers of devices whose software platforms are not "Android"?
+router.get('/carriers-not-android', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT DISTINCT carrier FROM devices WHERE software_platform != \'Android\' ORDER BY carrier ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Count the number of devices**:
+   - The `/count` endpoint queries the database to count all rows in the `devices` table and returns the count.
+
+2. **List the carriers of devices in ascending alphabetical order**:
+   - The `/carriers` endpoint selects distinct carriers from the `devices` table, orders them alphabetically, and returns the list.
+
+3. **What are the different carriers for devices, listed in alphabetical order?**:
+   - This is essentially the same as the `/carriers` endpoint, so it's included for completeness.
+
+4. **What are the carriers of devices whose software platforms are not "Android"?**:
+   - The `/carriers-not-android` endpoint selects distinct carriers from the `devices` table where the software platform is not 'Android', orders them alphabetically, and returns the list.
+
+### Notes
+
+- Ensure that you have a PostgreSQL database set up and that the connection pool (`pool`) in `../db.js` is correctly configured to connect to your database.
+- The SQL queries assume that the `carrier` and `software_platform` columns are of type `VARCHAR(255)`. Adjust the data types as necessary based on your actual schema.

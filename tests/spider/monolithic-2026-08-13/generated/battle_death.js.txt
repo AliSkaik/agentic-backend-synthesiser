@@ -1,0 +1,74 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. How many ships ended up being 'Captured'?
+router.get('/captured-ships', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT COUNT(*) AS captured_ships
+            FROM battle_deaths bd
+            JOIN battles b ON bd.battle_id = b.id
+            WHERE b.result = 'Captured';
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 2. List the name and tonnage ordered by in descending alphabetical order for the names.
+router.get('/ships', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT s.name, s.tonnage
+            FROM ships s
+            ORDER BY s.name DESC;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 3. List the name, date and result of each battle.
+router.get('/battles', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT b.name, b.date, b.result
+            FROM battles b;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 4. What is the maximum and minimum death toll caused each time?
+router.get('/death-toll', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT MAX(death_count) AS max_death_toll, MIN(death_count) AS min_death_toll
+            FROM battle_deaths;
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 5. What is the average number of injuries caused each time?
+router.get('/average-injuries', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT AVG(injury_count) AS avg_injuries
+            FROM battle_deaths;
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+export default router;

@@ -1,0 +1,78 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE bands (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    genre VARCHAR(100),
+    formed_year INT
+);
+
+CREATE TABLE labels (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE albums (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    release_year INT,
+    band_id INT REFERENCES bands(id),
+    label_id INT REFERENCES labels(id)
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. How many bands are there?
+router.get('/bands/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM bands');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. Find all the labels
+router.get('/labels', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM labels');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. Find all the albums in 2012
+router.get('/albums/2012', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT title FROM albums WHERE release_year = 2012');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Schema Creation**:
+   - `bands` table stores information about bands, including their name, genre, and formation year.
+   - `labels` table stores information about music labels.
+   - `albums` table stores information about albums, including their title, release year, band ID (foreign key referencing the `bands` table), and label ID (foreign key referencing the `labels` table).
+
+2. **Express Router**:
+   - `/bands/count`: Returns the total number of bands in the database.
+   - `/labels`: Returns a list of all labels.
+   - `/albums/2012`: Returns a list of all albums released in the year 2012.
+
+Each endpoint uses `pool.query` to execute SQL queries against the PostgreSQL database. The results are then returned as JSON responses.

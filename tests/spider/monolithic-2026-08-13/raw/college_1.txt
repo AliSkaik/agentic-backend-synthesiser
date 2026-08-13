@@ -1,0 +1,113 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE departments (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE
+);
+
+CREATE TABLE professors (
+    id SERIAL PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    department_id INT REFERENCES departments(id)
+);
+
+CREATE TABLE courses (
+    id SERIAL PRIMARY KEY,
+    code VARCHAR(20) NOT NULL UNIQUE,
+    title VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE professor_course_assignments (
+    id SERIAL PRIMARY KEY,
+    professor_id INT REFERENCES professors(id),
+    course_id INT REFERENCES courses(id)
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to find the number of professors in accounting department
+router.get('/professors/accounting', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT COUNT(*) AS professor_count
+            FROM professors
+            JOIN departments ON professors.department_id = departments.id
+            WHERE departments.name = 'Accounting'
+        `);
+        res.json({ professor_count: result.rows[0].professor_count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the number of professors in accounting dept
+router.get('/professors/accounting', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT COUNT(*) AS professor_count
+            FROM professors
+            JOIN departments ON professors.department_id = departments.id
+            WHERE departments.name = 'Accounting'
+        `);
+        res.json({ professor_count: result.rows[0].professor_count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the number of professors teaching class with code ACCT-211
+router.get('/professors/classes/ACCT-211', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT COUNT(*) AS professor_count
+            FROM professor_course_assignments
+            JOIN courses ON professor_course_assignments.course_id = courses.id
+            WHERE courses.code = 'ACCT-211'
+        `);
+        res.json({ professor_count: result.rows[0].professor_count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the first and last name of the professor in biology department
+router.get('/professors/biology', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT professors.first_name, professors.last_name
+            FROM professors
+            JOIN departments ON professors.department_id = departments.id
+            WHERE departments.name = 'Biology'
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - `departments`: Stores department information.
+   - `professors`: Stores professor information with a foreign key to the `departments` table.
+   - `courses`: Stores course information.
+   - `professor_course_assignments`: A junction table to handle many-to-many relationships between professors and courses.
+
+2. **Express Router**:
+   - `/professors/accounting`: Returns the number of professors in the Accounting department.
+   - `/professors/classes/ACCT-211`: Returns the number of professors teaching the class with code ACCT-211.
+   - `/professors/biology`: Returns the first and last names of all professors in the Biology department.
+
+Each endpoint uses `pool.query` to execute SQL queries against the PostgreSQL database. The results are then returned as JSON responses.

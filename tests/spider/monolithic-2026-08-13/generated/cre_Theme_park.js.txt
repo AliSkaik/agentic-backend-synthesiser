@@ -1,0 +1,38 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the total number of available hotels
+router.get('/total-hotels', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM hotels');
+        res.json({ totalHotels: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the price ranges of all hotels
+router.get('/price-ranges', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT MIN(price), MAX(price) FROM hotels');
+        const { min, max } = result.rows[0];
+        res.json({ minPrice: min, maxPrice: max });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get all distinct location names
+router.get('/distinct-locations', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT DISTINCT location FROM hotels');
+        const locations = result.rows.map(row => row.location);
+        res.json({ locations });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

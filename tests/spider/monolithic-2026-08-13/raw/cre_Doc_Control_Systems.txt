@@ -1,0 +1,103 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE document_status (
+    status_code VARCHAR(10) PRIMARY KEY,
+    description TEXT NOT NULL
+);
+
+CREATE TABLE document_type (
+    type_code VARCHAR(10) PRIMARY KEY,
+    description TEXT NOT NULL
+);
+
+CREATE TABLE shipping_agent (
+    agent_id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Get all document status codes
+router.get('/document-status-codes', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT status_code FROM document_status');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get description of a specific document status code
+router.get('/document-status-code/:status_code', async (req, res) => {
+    const { status_code } = req.params;
+    try {
+        const result = await pool.query('SELECT description FROM document_status WHERE status_code = $1', [status_code]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Document status code not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get all document type codes
+router.get('/document-type-codes', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT type_code FROM document_type');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get description of a specific document type code
+router.get('/document-type-code/:type_code', async (req, res) => {
+    const { type_code } = req.params;
+    try {
+        const result = await pool.query('SELECT description FROM document_type WHERE type_code = $1', [type_code]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Document type code not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get all shipping agent names
+router.get('/shipping-agents', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM shipping_agent');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - `document_status`: Stores document status codes and their descriptions.
+   - `document_type`: Stores document type codes and their descriptions.
+   - `shipping_agent`: Stores shipping agent IDs and names.
+
+2. **Express Router**:
+   - `/document-status-codes`: Returns all document status codes.
+   - `/document-status-code/:status_code`: Returns the description of a specific document status code.
+   - `/document-type-codes`: Returns all document type codes.
+   - `/document-type-code/:type_code`: Returns the description of a specific document type code.
+   - `/shipping-agents`: Returns all shipping agent names.
+
+Each endpoint uses `pool.query` to interact with the PostgreSQL database, ensuring that the queries are executed safely and efficiently.

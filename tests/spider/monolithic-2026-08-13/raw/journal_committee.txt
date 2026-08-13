@@ -1,0 +1,80 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE editors (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    age INT NOT NULL
+);
+```
+
+### Express Router (ES Module)
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. How many editors are there?
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM editors');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. List the names of editors in ascending order of age.
+router.get('/names-ascending', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM editors ORDER BY age ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. What are the names and ages of editors?
+router.get('/names-ages', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, age FROM editors');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. List the names of editors who are older than 25.
+router.get('/older-than-25', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM editors WHERE age > 25');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 5. Show the names of editors of age either 24 or 25.
+router.get('/age-24-or-25', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM editors WHERE age IN (24, 25)');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Count of Editors**: The `/count` endpoint returns the total number of editors in the database.
+2. **Names in Ascending Order**: The `/names-ascending` endpoint retrieves the names of all editors sorted by age in ascending order.
+3. **Names and Ages**: The `/names-ages` endpoint fetches both the names and ages of all editors.
+4. **Editors Older than 25**: The `/older-than-25` endpoint lists the names of editors who are older than 25 years.
+5. **Editors Age 24 or 25**: The `/age-24-or-25` endpoint returns the names of editors whose age is either 24 or 25.
+
+Each endpoint uses a `pool.query` call to execute the corresponding SQL query and returns the results in JSON format.

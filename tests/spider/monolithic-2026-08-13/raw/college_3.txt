@@ -1,0 +1,79 @@
+### PostgreSQL Schema
+
+First, let's design the database schema for the college system. We'll assume we have two tables: `courses` and `students`.
+
+```sql
+CREATE TABLE courses (
+    course_id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    credits INT NOT NULL
+);
+
+CREATE TABLE students (
+    student_id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    age INT NOT NULL,
+    course_id INT REFERENCES courses(course_id)
+);
+```
+
+### Express Router
+
+Next, let's create an Express router to handle the REST endpoints for querying the database.
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to count all courses
+router.get('/courses/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM courses');
+        res.json({ total_courses: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to count courses with more than 2 credits
+router.get('/courses/count/credits', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM courses WHERE credits > 2');
+        res.json({ courses_more_than_2_credits: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list names of courses with 1 credit
+router.get('/courses/names/credits', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM courses WHERE credits = 1');
+        res.json({ course_names_with_1_credit: result.rows.map(row => row.name) });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - `courses` table with columns for `course_id`, `name`, and `credits`.
+   - `students` table with columns for `student_id`, `name`, `age`, and a foreign key `course_id` referencing the `courses` table.
+
+2. **Express Router**:
+   - `/courses/count`: Returns the total number of courses.
+   - `/courses/count/credits`: Returns the number of courses that have more than 2 credits.
+   - `/courses/names/credits`: Returns a list of names of courses that have exactly 1 credit.
+
+### Notes
+
+- Ensure you have a PostgreSQL database and a connection pool set up in `../db.js`.
+- The Express router should be imported and used in your main application file (e.g., `app.js`).
+
+This setup provides a basic backend for querying the college system's courses based on the specified requirements.

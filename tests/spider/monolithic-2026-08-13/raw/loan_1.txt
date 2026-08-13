@@ -1,0 +1,79 @@
+### PostgreSQL Schema
+
+First, let's design the database schema for the loan system. We'll need tables for `bank_branches`, `customers`, and potentially other related entities.
+
+```sql
+CREATE TABLE bank_branches (
+    branch_id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    city VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE customers (
+    customer_id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    branch_id INT REFERENCES bank_branches(branch_id)
+);
+```
+
+### Express Router
+
+Next, let's create an Express router to handle the REST endpoints for querying the database.
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to count the number of bank branches
+router.get('/branches/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM bank_branches');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to count the total number of customers across all banks
+router.get('/customers/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM customers');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to count the number of customers in banks at New York City
+router.get('/customers/new-york-city', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT COUNT(*) 
+            FROM customers 
+            JOIN bank_branches ON customers.branch_id = bank_branches.branch_id 
+            WHERE bank_branches.city = 'New York City'
+        `);
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - `bank_branches` table stores information about each bank branch, including its ID, name, and city.
+   - `customers` table stores information about each customer, including their ID, name, email, and the branch they are associated with.
+
+2. **Express Router**:
+   - `/branches/count`: Returns the total number of bank branches.
+   - `/customers/count`: Returns the total number of customers across all banks.
+   - `/customers/new-york-city`: Returns the number of customers in banks located in New York City.
+
+Each endpoint uses `pool.query` to execute a SQL query against the PostgreSQL database and returns the result as JSON. Error handling is included to catch any issues that may arise during the database operations.

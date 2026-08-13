@@ -1,0 +1,46 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the number of aircrafts in the database
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM aircrafts');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get all aircrafts with their names and distances
+router.get('/all', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id, name, distance FROM aircrafts');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get all airplanes with their names and distances
+router.get('/airplanes', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id, name, distance FROM aircrafts WHERE name LIKE \'%Airplane%\'');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get aircrafts with more than 1000 distance
+router.get('/long-distance', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id FROM aircrafts WHERE distance > 1000');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

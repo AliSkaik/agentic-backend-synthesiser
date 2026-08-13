@@ -1,0 +1,74 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to find the department with the largest number of employees
+router.get('/largest-department', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT d.department_id, d.name, COUNT(e.employee_id) AS employee_count
+            FROM departments d
+            JOIN employees e ON d.department_id = e.department_id
+            GROUP BY d.department_id, d.name
+            ORDER BY employee_count DESC
+            LIMIT 1;
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the department with the most employees
+router.get('/most-employees', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT d.department_id, d.name, COUNT(e.employee_id) AS employee_count
+            FROM departments d
+            JOIN employees e ON d.department_id = e.department_id
+            GROUP BY d.department_id, d.name
+            ORDER BY employee_count DESC
+            LIMIT 1;
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the employee id of the head whose department has the least number of employees
+router.get('/least-employees-head', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT e.employee_id
+            FROM departments d
+            JOIN employees e ON d.department_id = e.department_id
+            WHERE e.head = TRUE
+            ORDER BY COUNT(e.employee_id) ASC
+            LIMIT 1;
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the name and position of the head whose department has least number of employees
+router.get('/least-employees-head-details', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT e.employee_id, e.first_name, e.last_name, e.position
+            FROM departments d
+            JOIN employees e ON d.department_id = e.department_id
+            WHERE e.head = TRUE
+            ORDER BY COUNT(e.employee_id) ASC
+            LIMIT 1;
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

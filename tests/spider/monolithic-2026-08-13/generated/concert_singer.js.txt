@@ -1,0 +1,52 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the total number of singers
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM concert_singers');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get all singers ordered by age from oldest to youngest
+router.get('/all', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, country, age FROM concert_singers ORDER BY age DESC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get all singers ordered by age from youngest to oldest
+router.get('/all-asc', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, country, age FROM concert_singers ORDER BY age ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get average, minimum, and maximum age of all singers from France
+router.get('/france-stats', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                AVG(age) AS avg_age,
+                MIN(age) AS min_age,
+                MAX(age) AS max_age
+            FROM concert_singers WHERE country = 'France'
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

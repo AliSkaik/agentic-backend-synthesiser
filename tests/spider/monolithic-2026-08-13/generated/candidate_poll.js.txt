@@ -1,0 +1,48 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the total number of candidates
+router.get('/candidates/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM candidates');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the poll resource with the most number of candidate information
+router.get('/polls/most-candidates', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT p.id, p.name, COUNT(c.id) AS candidate_count
+            FROM polls p
+            JOIN candidates c ON p.id = c.poll_id
+            GROUP BY p.id, p.name
+            ORDER BY candidate_count DESC
+            LIMIT 1
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the top 3 highest support rates
+router.get('/candidates/top-support-rates', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT c.id, c.name, c.support_rate
+            FROM candidates c
+            ORDER BY c.support_rate DESC
+            LIMIT 3
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

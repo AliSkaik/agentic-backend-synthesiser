@@ -1,0 +1,48 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to display the first name and department name for each employee
+router.get('/employees/departments', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT e.first_name, d.department_name
+            FROM employees e
+            JOIN departments d ON e.department_id = d.department_id;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list the full name and salary for those employees who earn below 6000
+router.get('/employees/salary', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT e.first_name || ' ' || e.last_name AS full_name, e.salary
+            FROM employees e
+            WHERE e.salary < 6000;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to display the first name and department number for all employees whose last name is "McEwen"
+router.get('/employees/mcewen', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT e.first_name, e.department_id
+            FROM employees e
+            WHERE e.last_name = 'McEwen';
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

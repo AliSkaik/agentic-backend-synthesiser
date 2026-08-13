@@ -1,0 +1,45 @@
+import express from 'express';
+import { pool } from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the name of the most recent race
+router.get('/most-recent-race', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM races ORDER BY date DESC LIMIT 1');
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'No races found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Endpoint to get the name and date of the most recent race
+router.get('/most-recent-race-details', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, date FROM races ORDER BY date DESC LIMIT 1');
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'No races found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Endpoint to get the names of all races held in 2017
+router.get('/races-2017', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM races WHERE EXTRACT(YEAR FROM date) = 2017');
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'No races found in 2017' });
+        }
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+export default router;

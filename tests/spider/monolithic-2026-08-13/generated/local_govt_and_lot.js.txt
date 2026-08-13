@@ -1,0 +1,86 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. How many residents does each property have? List property id and resident count.
+router.get('/properties/residents-count', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT p.id AS property_id, COUNT(r.id) AS resident_count
+            FROM properties p
+            LEFT JOIN residents r ON p.id = r.property_id
+            GROUP BY p.id;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. What is the distinct service types that are provided by the organization which has detail 'Denesik and Sons Party'? 
+router.get('/services/types-by-organization', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT DISTINCT s.service_type
+            FROM services s
+            JOIN requests r ON s.id = r.service_id
+            JOIN residents res ON r.resident_id = res.id
+            JOIN properties p ON res.property_id = p.id
+            JOIN organizations o ON p.organization_id = o.id
+            WHERE o.detail = 'Denesik and Sons Party';
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. What is the maximum number that a certain service is provided? List the service id, details and number.
+router.get('/services/max-provided', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT s.id AS service_id, s.details, COUNT(r.id) AS count
+            FROM services s
+            JOIN requests r ON s.id = r.service_id
+            GROUP BY s.id, s.details
+            ORDER BY count DESC
+            LIMIT 1;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. List the resident id, details, and the count in descending order of the count.
+router.get('/residents/services-count', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT r.id AS resident_id, r.name AS resident_details, COUNT(r.id) AS service_count
+            FROM residents r
+            JOIN requests req ON r.id = req.resident_id
+            GROUP BY r.id, r.name
+            ORDER BY service_count DESC;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 5. List the id and type of each thing, and the details of the organization that owns it.
+router.get('/things', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT p.id AS property_id, p.address AS property_address, o.detail AS organization_detail
+            FROM properties p
+            JOIN organizations o ON p.organization_id = o.id;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

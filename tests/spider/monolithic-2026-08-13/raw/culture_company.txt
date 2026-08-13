@@ -1,0 +1,80 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE book_clubs (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    location VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE books (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    author VARCHAR(255),
+    editor VARCHAR(255),
+    publication_year INT,
+    publisher VARCHAR(255)
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to count the number of book clubs
+router.get('/book-clubs/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM book_clubs');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to show titles and authors or editors for all books made after 1989
+router.get('/books/after-1989', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT title, author, editor 
+            FROM books 
+            WHERE publication_year > 1989;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to show all distinct publishers for books
+router.get('/books/publishers', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT DISTINCT publisher 
+            FROM books;
+        `);
+        res.json(result.rows.map(row => row.publisher));
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - `book_clubs` table stores information about book clubs, including their name and location.
+   - `books` table stores information about books, including title, author, editor, publication year, and publisher.
+
+2. **Express Router**:
+   - `/book-clubs/count`: Returns the total number of book clubs.
+   - `/books/after-1989`: Returns a list of titles, authors, or editors for all books published after 1989.
+   - `/books/publishers`: Returns a list of distinct publishers.
+
+Each endpoint uses `pool.query` to execute SQL queries against the PostgreSQL database. The results are then returned as JSON responses.

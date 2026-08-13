@@ -1,0 +1,73 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE accounts (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    balance NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE statements (
+    id SERIAL PRIMARY KEY,
+    account_id INT REFERENCES accounts(id),
+    amount NUMERIC(10, 2) NOT NULL,
+    type VARCHAR(50) CHECK (type IN ('credit', 'debit')),
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Get the number of accounts
+router.get('/accounts/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM accounts');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get all account ids and details
+router.get('/accounts', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id, name, balance FROM accounts');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get the number of statements
+router.get('/statements/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM statements');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - `accounts` table stores information about each account, including an ID, name, balance, and creation timestamp.
+   - `statements` table stores transactional data for each account, including an ID, reference to the account, amount, type (credit/debit), description, and creation timestamp.
+
+2. **Express Router**:
+   - `/accounts/count`: Returns the total number of accounts in the database.
+   - `/accounts`: Returns a list of all account IDs and details.
+   - `/statements/count`: Returns the total number of statements in the database.
+
+Each endpoint uses `pool.query` to execute SQL queries against the PostgreSQL database. The results are then returned as JSON responses.

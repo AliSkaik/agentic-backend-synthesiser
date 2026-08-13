@@ -1,0 +1,36 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Get the total number of clubs
+router.get('/clubs/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM clubs');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get the names of all clubs
+router.get('/clubs', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM clubs');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get the total number of students
+router.get('/students/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM students');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

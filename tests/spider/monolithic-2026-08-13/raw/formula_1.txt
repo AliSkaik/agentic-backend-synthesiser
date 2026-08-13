@@ -1,0 +1,72 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE races (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    date DATE NOT NULL
+);
+```
+
+### Express Router (ES Module)
+
+```javascript
+import express from 'express';
+import { pool } from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the name of the most recent race
+router.get('/most-recent-race', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM races ORDER BY date DESC LIMIT 1');
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'No races found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Endpoint to get the name and date of the most recent race
+router.get('/most-recent-race-details', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, date FROM races ORDER BY date DESC LIMIT 1');
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'No races found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Endpoint to get the names of all races held in 2017
+router.get('/races-2017', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM races WHERE EXTRACT(YEAR FROM date) = 2017');
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'No races found in 2017' });
+        }
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - A `races` table is created with columns for `id`, `name`, and `date`.
+
+2. **Express Router**:
+   - Three endpoints are defined:
+     - `/most-recent-race`: Returns the name of the most recent race.
+     - `/most-recent-race-details`: Returns the name and date of the most recent race.
+     - `/races-2017`: Returns the names of all races held in 2017.
+
+Each endpoint uses `pool.query` to execute SQL queries against the PostgreSQL database. The results are then returned as JSON responses. Error handling is included to manage any issues that arise during the query execution.

@@ -1,0 +1,56 @@
+import express from 'express';
+import { pool } from '../db.js';
+
+const router = express.Router();
+
+// 1. How many body builders are there?
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM body_builders');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. List the total scores of body builders in ascending order.
+router.get('/total-scores', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT total_score FROM body_builders ORDER BY total_score ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. List the snatch score and clean jerk score of body builders in ascending order of snatch score.
+router.get('/snatch-scores', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, snatch_score, clean_jerk_score FROM body_builders ORDER BY snatch_score ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. What is the average snatch score of body builders?
+router.get('/average-snatch-score', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT AVG(snatch_score) AS average_snatch_score FROM body_builders');
+        res.json({ averageSnatchScore: result.rows[0].average_snatch_score });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 5. What are the clean and jerk score of the body builder with the highest total score?
+router.get('/highest-total-score', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, clean_jerk_score FROM body_builders WHERE total_score = (SELECT MAX(total_score) FROM body_builders)');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

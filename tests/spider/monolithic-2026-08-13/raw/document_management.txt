@@ -1,0 +1,95 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE documents (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    access_count INTEGER DEFAULT 0
+);
+```
+
+### Express Router (ES Module)
+
+```javascript
+import express from 'express';
+import { pool } from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to find the name and access counts of all documents, in alphabetic order of the document name.
+router.get('/documents', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT name, access_count
+            FROM documents
+            ORDER BY name ASC;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the names of all the documents, as well as the access counts of each, ordered alphabetically.
+router.get('/documents-with-counts', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT name, access_count
+            FROM documents
+            ORDER BY name ASC;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the name of the document that has been accessed the greatest number of times, as well as the count of how many times it has been accessed.
+router.get('/most-accessed-document', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT name, access_count
+            FROM documents
+            ORDER BY access_count DESC
+            LIMIT 1;
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the types of documents with more than 4 documents.
+router.get('/document-types-with-more-than-4', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT name
+            FROM documents
+            GROUP BY name
+            HAVING COUNT(*) > 4;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - The `documents` table has three columns: `id`, `name`, and `access_count`.
+   - `id` is a primary key that auto-increments.
+   - `name` is a unique, non-null string representing the document name.
+   - `access_count` is an integer representing how many times the document has been accessed. It defaults to 0.
+
+2. **Express Router**:
+   - The router defines four endpoints:
+     - `/documents`: Returns all documents with their names and access counts in alphabetical order.
+     - `/documents-with-counts`: Alias for `/documents`.
+     - `/most-accessed-document`: Returns the document that has been accessed the most times along with its count.
+     - `/document-types-with-more-than-4`: Returns the names of documents that have more than 4 occurrences.
+
+Each endpoint uses `pool.query` to execute a SQL query against the PostgreSQL database and returns the results as JSON. Error handling is included to catch any issues during the database operations.

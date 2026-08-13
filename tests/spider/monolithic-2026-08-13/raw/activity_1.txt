@@ -1,0 +1,105 @@
+### PostgreSQL Schema
+
+First, let's design the database schema for the `activity` feature. We'll assume we have a table named `faculty` with the following columns:
+
+- `id`: Unique identifier for each faculty member.
+- `name`: Name of the faculty member.
+- `rank`: Rank of the faculty member (e.g., Assistant Professor, Associate Professor, Full Professor).
+- `building`: Building where the faculty member's office is located.
+
+Here is the SQL schema:
+
+```sql
+CREATE TABLE faculty (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    rank VARCHAR(100) NOT NULL,
+    building VARCHAR(100) NOT NULL
+);
+```
+
+### Express Router
+
+Next, let's create an Express router to handle the REST endpoints for querying the database. We'll use a PostgreSQL connection pool imported from `../db.js`.
+
+Here is the JavaScript code:
+
+```javascript
+import express from 'express';
+import { Pool } from 'pg';
+
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+});
+
+const router = express.Router();
+
+// Endpoint to get the total number of faculty members
+router.get('/faculty/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM faculty');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the distinct ranks of faculty
+router.get('/faculty/ranks', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT DISTINCT rank FROM faculty');
+        res.json(result.rows.map(row => row.rank));
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the distinct buildings with faculty rooms
+router.get('/faculty/buildings', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT DISTINCT building FROM faculty');
+        res.json(result.rows.map(row => row.building));
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - The `faculty` table is created with columns for `id`, `name`, `rank`, and `building`.
+   - The `id` column is of type `SERIAL` which automatically generates a unique identifier.
+
+2. **Express Router**:
+   - We create an Express router using `express.Router()`.
+   - Three endpoints are defined:
+     - `/faculty/count`: Returns the total number of faculty members.
+     - `/faculty/ranks`: Returns a list of distinct ranks for faculty members.
+     - `/faculty/buildings`: Returns a list of distinct buildings where faculty members have offices.
+
+3. **Database Queries**:
+   - Each endpoint uses `pool.query` to execute SQL queries against the PostgreSQL database.
+   - The results are then formatted and returned as JSON responses.
+
+### Usage
+
+To use this router in your Express application, you would typically import it and use it in your main server file:
+
+```javascript
+import express from 'express';
+import facultyRouter from './routes/faculty';
+
+const app = express();
+app.use(express.json());
+
+app.use('/api', facultyRouter);
+
+app.listen(3000, () => {
+    console.log('Server is running on port 3000');
+});
+```
+
+This setup will allow you to query the number of faculty members, their ranks, and distinct buildings using REST endpoints.

@@ -1,0 +1,73 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE manufacturers (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    founder VARCHAR(255),
+    headquarters VARCHAR(255),
+    revenue NUMERIC(15, 2)
+);
+```
+
+### Express Router (ES Module)
+
+```javascript
+import { Router } from 'express';
+import pool from '../db.js';
+
+const router = Router();
+
+// Endpoint to get the founder of a company by name
+router.get('/founder/:name', async (req, res) => {
+    const { name } = req.params;
+    try {
+        const result = await pool.query('SELECT founder FROM manufacturers WHERE name = $1', [name]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Manufacturer not found' });
+        }
+        res.json(result.rows[0].founder);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the headquarters of a company by founder's name
+router.get('/headquarters/:founder', async (req, res) => {
+    const { founder } = req.params;
+    try {
+        const result = await pool.query('SELECT headquarters FROM manufacturers WHERE founder = $1', [founder]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Manufacturer not found' });
+        }
+        res.json(result.rows[0].headquarters);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get all manufacturers' names and their headquarters, sorted by revenue
+router.get('/all', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, headquarters FROM manufacturers ORDER BY revenue DESC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - The `manufacturers` table includes columns for `id`, `name`, `founder`, `headquarters`, and `revenue`.
+
+2. **Express Router**:
+   - Three endpoints are defined:
+     1. `/founder/:name`: Returns the founder of a company by its name.
+     2. `/headquarters/:founder`: Returns the headquarters of a company by the founder's name.
+     3. `/all`: Returns all manufacturers' names and their headquarters, sorted by revenue in descending order.
+
+Each endpoint uses `pool.query` to interact with the PostgreSQL database. Error handling is included to manage potential issues such as missing records or server errors.

@@ -1,0 +1,78 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the number of games held after season 2007
+router.get('/games-after-2007', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM games WHERE season > 2007');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list the dates of games by home team name in descending order
+router.get('/games-by-home-team/:homeTeam', async (req, res) => {
+    const { homeTeam } = req.params;
+    try {
+        const result = await pool.query('SELECT date FROM games WHERE home_team = $1 ORDER BY date DESC', [homeTeam]);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list the season, home team, away team of all the games
+router.get('/all-games', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT season, home_team, away_team FROM games');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the maximum, minimum and average home games each stadium held
+router.get('/stadium-home-games', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                s.name AS stadium_name,
+                MAX(g.home_team) AS max_home_games,
+                MIN(g.home_team) AS min_home_games,
+                AVG(COUNT(g.home_team)) AS avg_home_games
+            FROM 
+                games g
+            JOIN 
+                stadiums s ON g.stadium_name = s.name
+            GROUP BY 
+                s.name
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the average attendance of stadiums with capacity percentage higher than 100%
+router.get('/average-attendance-high-capacity', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                AVG(g.attendance) AS avg_attendance
+            FROM 
+                games g
+            JOIN 
+                stadiums s ON g.stadium_name = s.name
+            WHERE 
+                s.capacity_percentage > 100
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

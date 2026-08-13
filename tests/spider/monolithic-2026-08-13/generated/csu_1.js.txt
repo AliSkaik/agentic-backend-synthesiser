@@ -1,0 +1,36 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get all campuses in Los Angeles county
+router.get('/los-angeles-county', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM campuses WHERE county = $1', ['Los Angeles']);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get all campuses in Chico
+router.get('/chico', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM campuses WHERE city = $1', ['Chico']);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get all campuses opened in 1958
+router.get('/opened-1958', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM campuses WHERE year_opened = $1', [1958]);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

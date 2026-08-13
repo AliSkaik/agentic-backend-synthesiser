@@ -1,0 +1,70 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Show all the locations where no cinema has capacity over 800
+router.get('/locations/no-large-capacity', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT l.id, l.name
+            FROM locations l
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM cinemas c
+                WHERE c.location_id = l.id AND c.capacity > 800
+            )
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Show all the locations where some cinemas were opened in both year 2010 and year 2011
+router.get('/locations/opened-in-both-years', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT l.id, l.name
+            FROM locations l
+            WHERE EXISTS (
+                SELECT 1
+                FROM cinemas c
+                WHERE c.location_id = l.id AND c.opening_year = 2010
+            )
+            AND EXISTS (
+                SELECT 1
+                FROM cinemas c
+                WHERE c.location_id = l.id AND c.opening_year = 2011
+            )
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// How many cinemas do we have?
+router.get('/cinemas/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) AS total FROM cinemas');
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Show name, opening year, and capacity for each cinema
+router.get('/cinemas', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT c.name, c.opening_year, c.capacity
+            FROM cinemas c
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

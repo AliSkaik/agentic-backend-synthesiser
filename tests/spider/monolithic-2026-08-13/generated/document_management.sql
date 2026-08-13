@@ -1,0 +1,5 @@
+CREATE TABLE documents (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    access_count INTEGER DEFAULT 0
+);

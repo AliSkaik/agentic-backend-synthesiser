@@ -1,0 +1,97 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE games (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    type_id INT REFERENCES game_types(id),
+    user_id INT -- Assuming you have a users table with an ID column
+);
+
+CREATE TABLE game_types (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the total number of video games
+router.get('/total-games', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM games');
+        res.json({ total_games: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the number of video games a user has
+router.get('/user-games/:userId', async (req, res) => {
+    const { userId } = req.params;
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM games WHERE user_id = $1', [userId]);
+        res.json({ user_games: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the total number of video game types
+router.get('/total-types', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM game_types');
+        res.json({ total_types: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the count of different game types
+router.get('/type-counts', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT gt.name AS type_name, COUNT(g.id) AS game_count
+            FROM games g
+            JOIN game_types gt ON g.type_id = gt.id
+            GROUP BY gt.name
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to show all video game types
+router.get('/types', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM game_types');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - `games` table with columns for `id`, `name`, `type_id`, and `user_id`.
+   - `game_types` table with columns for `id` and `name`.
+
+2. **Express Router**:
+   - `/total-games`: Returns the total number of video games.
+   - `/user-games/:userId`: Returns the number of video games a specific user has.
+   - `/total-types`: Returns the total number of video game types.
+   - `/type-counts`: Returns the count of different game types along with their names.
+   - `/types`: Returns all video game types.
+
+Each endpoint uses `pool.query` to interact with the PostgreSQL database, ensuring that the queries are executed safely and efficiently.

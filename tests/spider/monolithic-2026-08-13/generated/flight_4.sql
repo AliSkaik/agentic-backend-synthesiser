@@ -1,0 +1,12 @@
+CREATE TABLE airports (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    city VARCHAR(255) NOT NULL,
+    country VARCHAR(255) NOT NULL,
+    elevation INTEGER NOT NULL
+);
+
+CREATE TABLE airlines (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL
+);

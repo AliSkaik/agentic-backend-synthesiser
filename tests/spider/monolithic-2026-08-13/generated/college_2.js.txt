@@ -1,0 +1,85 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Find the buildings which have rooms with capacity more than 50
+router.get('/buildings-with-large-rooms', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT DISTINCT b.name AS building_name
+            FROM buildings b
+            JOIN rooms r ON b.id = r.building_id
+            WHERE r.capacity > 50;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// What are the distinct buildings with capacities of greater than 50?
+router.get('/distinct-buildings-with-large-rooms', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT DISTINCT b.name AS building_name
+            FROM buildings b
+            JOIN rooms r ON b.id = r.building_id
+            WHERE r.capacity > 50;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Count the number of rooms that are not in the Lamberton building
+router.get('/rooms-not-in-lamberton', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT COUNT(*) AS room_count
+            FROM rooms r
+            JOIN buildings b ON r.building_id = b.id
+            WHERE b.name != 'Lamberton';
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// How many classrooms are not in Lamberton?
+router.get('/classrooms-not-in-lamberton', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT COUNT(*) AS classroom_count
+            FROM rooms r
+            JOIN buildings b ON r.building_id = b.id
+            WHERE b.name != 'Lamberton' AND r.room_type = 'classroom';
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// What is the name and building of the departments whose budget is more than the average budget?
+router.get('/departments-with-high-budget', async (req, res) => {
+    try {
+        const avgBudget = await pool.query(`
+            SELECT AVG(budget) AS avg_budget
+            FROM departments;
+        `);
+        const result = await pool.query(`
+            SELECT d.name AS department_name, b.name AS building_name
+            FROM departments d
+            JOIN buildings b ON d.building_id = b.id
+            WHERE d.budget > $1;
+        `, [avgBudget.rows[0].avg_budget]);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

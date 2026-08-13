@@ -1,0 +1,87 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. Which assets have 2 parts and have less than 2 fault logs?
+router.get('/assets-with-2-parts-and-fewer-than-2-fault-logs', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT a.asset_id, a.detail
+            FROM assets a
+            JOIN parts p ON a.asset_id = p.asset_id
+            LEFT JOIN fault_logs fl ON a.asset_id = fl.asset_id
+            GROUP BY a.asset_id, a.detail
+            HAVING COUNT(p.part_id) = 2 AND COUNT(fl.log_id) < 2;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. How many assets does each maintenance contract contain?
+router.get('/assets-per-maintenance-contract', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT mc.contract_id, COUNT(mc.asset_id) AS asset_count
+            FROM maintenance_contracts mc
+            GROUP BY mc.contract_id;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. How many assets does each third party company supply?
+router.get('/assets-per-third-party-company', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT tpc.company_id, COUNT(csup.asset_id) AS asset_count
+            FROM third_party_companies tpc
+            JOIN company_suppliers csup ON tpc.company_id = csup.company_id
+            GROUP BY tpc.company_id;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. Which third party companies have at least 2 maintenance engineers or have at least 2 maintenance contracts?
+router.get('/third-party-companies-with-conditions', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT tpc.company_id, tpc.name
+            FROM third_party_companies tpc
+            WHERE (
+                SELECT COUNT(*) FROM maintenance_engineers me WHERE me.company_id = tpc.company_id
+            ) >= 2 OR (
+                SELECT COUNT(*) FROM maintenance_contracts mc WHERE mc.company_id = tpc.company_id
+            ) >= 2;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 5. What is the name and id of the staff who recorded the fault log but has not contacted any visiting engineers?
+router.get('/staff-without-contacted-engineers', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT fl.staff_id, s.name
+            FROM fault_logs fl
+            JOIN staff s ON fl.staff_id = s.staff_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM visiting_engineers ve WHERE ve.staff_id = fl.staff_id
+            );
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

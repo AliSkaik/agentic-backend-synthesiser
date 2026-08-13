@@ -1,0 +1,88 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE companies (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    headquarters VARCHAR(255),
+    industry VARCHAR(100),
+    sales NUMERIC,
+    market_value NUMERIC
+);
+```
+
+### Express Router (ES Module)
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. How many companies are headquartered in the US?
+router.get('/us-headquartered-companies', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM companies WHERE headquarters = $1', ['US']);
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. List the names of companies by ascending number of sales.
+router.get('/companies-by-sales', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM companies ORDER BY sales ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. What are the headquarters and industries of all companies?
+router.get('/company-details', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, headquarters, industry FROM companies');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. Show the names of companies in the banking or retailing industry?
+router.get('/companies-in-banking-or-retailing', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM companies WHERE industry IN ($1, $2)', ['Banking', 'Retailing']);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 5. What is the maximum and minimum market value of companies?
+router.get('/market-value-range', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT MAX(market_value) AS max_market_value, MIN(market_value) AS min_market_value FROM companies');
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Schema Creation**:
+   - The `companies` table includes fields for `id`, `name`, `headquarters`, `industry`, `sales`, and `market_value`.
+
+2. **Express Router Endpoints**:
+   - Each endpoint corresponds to one of the questions provided.
+   - Queries are executed using `pool.query` from a PostgreSQL connection pool imported from `../db.js`.
+   - Results are returned as JSON.
+
+### Usage
+
+- Ensure you have a PostgreSQL database and a connection pool set up in your `db.js` file.
+- Import and use this router in your main application file to handle the API requests.

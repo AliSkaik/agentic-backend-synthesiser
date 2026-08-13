@@ -1,0 +1,80 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE customers (
+    customer_id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE accounts (
+    account_id SERIAL PRIMARY KEY,
+    customer_id INT REFERENCES customers(customer_id),
+    account_name VARCHAR(100) NOT NULL,
+    balance DECIMAL(15, 2) DEFAULT 0.00
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to count the number of accounts
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM accounts');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to show ids, customer ids, names for all accounts
+router.get('/all', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT a.account_id, a.customer_id, c.name AS customer_name
+            FROM accounts a
+            JOIN customers c ON a.customer_id = c.customer_id
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to show other account details for account with name 338
+router.get('/details', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT *
+            FROM accounts
+            WHERE account_name = $1
+        `, ['338']);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Account not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - `customers` table with columns for `customer_id`, `name`.
+   - `accounts` table with columns for `account_id`, `customer_id`, `account_name`, and `balance`.
+
+2. **Express Router**:
+   - `/count`: Returns the total number of accounts.
+   - `/all`: Returns a list of all accounts including their IDs, customer IDs, and customer names.
+   - `/details`: Returns details for an account with the name '338'. If no such account exists, it returns a 404 error.
+
+This setup ensures that you can interact with your database through RESTful endpoints using Node.js and Express.

@@ -1,0 +1,68 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE films (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    director VARCHAR(100),
+    ticket_sales_gross NUMERIC(15, 2)
+);
+```
+
+### Express Router (ES Module)
+
+```javascript
+import express from 'express';
+import { pool } from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to count the number of films
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM films');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list distinct directors of all films
+router.get('/directors', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT DISTINCT director FROM films');
+        res.json(result.rows.map(row => row.director));
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the average ticket sales gross in dollars of films
+router.get('/average-ticket-sales', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT AVG(ticket_sales_gross) AS average FROM films');
+        res.json({ average: result.rows[0].average });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **PostgreSQL Schema**:
+   - The `films` table has columns for `id`, `title`, `director`, and `ticket_sales_gross`.
+   - `id` is a serial primary key.
+   - `title` is a required string.
+   - `director` is an optional string to store the director's name.
+   - `ticket_sales_gross` is a numeric type to store the ticket sales gross in dollars.
+
+2. **Express Router**:
+   - The router provides three endpoints:
+     - `/count`: Returns the total number of films.
+     - `/directors`: Returns a list of distinct directors.
+     - `/average-ticket-sales`: Returns the average ticket sales gross in dollars.
+
+Each endpoint uses `pool.query` to execute SQL queries against the PostgreSQL database. Error handling is included to catch and respond with an error message if something goes wrong.

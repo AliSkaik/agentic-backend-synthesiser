@@ -1,0 +1,52 @@
+import express from 'express';
+import { Pool } from 'pg';
+
+const router = express.Router();
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+});
+
+// Middleware to parse JSON bodies
+router.use(express.json());
+
+// Endpoint to get the total number of employees
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM employees');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to sort employee names by their age in ascending order
+router.get('/sort-by-age', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM employees ORDER BY age ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list the names of employees and sort in ascending order of age
+router.get('/list-by-age', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM employees ORDER BY age ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to count the number of employees from each city
+router.get('/count-by-city', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT city, COUNT(*) AS count FROM employees GROUP BY city');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

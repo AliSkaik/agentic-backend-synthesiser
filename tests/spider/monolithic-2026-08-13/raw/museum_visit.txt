@@ -1,0 +1,90 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE visitors (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    age INT NOT NULL,
+    membership_level INT NOT NULL
+);
+
+CREATE TABLE museums (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    staff_count INT NOT NULL
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the number of visitors below age 30
+router.get('/visitors/under-30', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM visitors WHERE age < 30');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the names of visitors with membership level higher than 4, ordered by level from high to low
+router.get('/visitors/membership-level-4', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM visitors WHERE membership_level > 4 ORDER BY membership_level DESC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the average age of visitors with membership level not higher than 4
+router.get('/visitors/average-age', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT AVG(age) FROM visitors WHERE membership_level <= 4');
+        res.json({ average_age: result.rows[0].avg });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the name and membership level of visitors with membership level higher than 4, sorted by age from old to young
+router.get('/visitors/membership-level-4-age-desc', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, membership_level FROM visitors WHERE membership_level > 4 ORDER BY age DESC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the id and name of the museum with the most staff members
+router.get('/museum/most-staff', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id, name FROM museums ORDER BY staff_count DESC LIMIT 1');
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - `visitors` table with columns for `id`, `name`, `age`, and `membership_level`.
+   - `museums` table with columns for `id`, `name`, and `staff_count`.
+
+2. **Express Router**:
+   - Endpoints are defined to handle different queries as specified in the problem statement.
+   - Each endpoint uses `pool.query` to execute SQL queries against the PostgreSQL database.
+   - Results are returned as JSON responses.
+
+This setup ensures that you can interact with your museum visit data through RESTful endpoints, leveraging both PostgreSQL for data storage and Express.js for handling HTTP requests.

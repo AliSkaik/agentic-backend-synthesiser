@@ -1,0 +1,73 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the number of mainstream browsers with at least 5% market share
+router.get('/mainstream-browsers', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT COUNT(*) AS count FROM browsers WHERE market_share >= 5;
+        `);
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list browser names in descending order by market share
+router.get('/browser-names', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT name FROM browsers ORDER BY market_share DESC;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list all browser ids, names, and market shares
+router.get('/all-browsers', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT id, name, market_share FROM browsers;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the maximum, minimum, and average market share of listed browsers
+router.get('/market-share-stats', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                MAX(market_share) AS max_market_share,
+                MIN(market_share) AS min_market_share,
+                AVG(market_share) AS avg_market_share
+            FROM browsers;
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the id and market share of the browser Safari
+router.get('/safari', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT id, market_share FROM browsers WHERE name = 'Safari';
+        `);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Browser not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

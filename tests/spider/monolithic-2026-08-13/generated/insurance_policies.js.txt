@@ -1,0 +1,74 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to find claims with more than 2 settlements or maximum claim value
+router.get('/claims', async (req, res) => {
+    try {
+        const query1 = `
+            SELECT c.claim_id, c.claim_date
+            FROM claims c
+            JOIN settlements s ON c.claim_id = s.claim_id
+            GROUP BY c.claim_id, c.claim_date
+            HAVING COUNT(s.settlement_id) > 2;
+        `;
+
+        const query2 = `
+            SELECT claim_id, claim_date
+            FROM claims
+            WHERE claim_value = (SELECT MAX(claim_value) FROM claims);
+        `;
+
+        const [results1, results2] = await Promise.all([
+            pool.query(query1),
+            pool.query(query2)
+        ]);
+
+        const claims = [...results1.rows, ...results2.rows];
+        res.json(claims);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find customers with at least 2 policies but no claims
+router.get('/customers-without-claims', async (req, res) => {
+    try {
+        const query = `
+            SELECT c.customer_id, c.first_name, c.last_name, c.email
+            FROM customers c
+            JOIN policies p ON c.customer_id = p.customer_id
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM claims cl
+                WHERE cl.policy_id = p.policy_id
+            )
+            GROUP BY c.customer_id, c.first_name, c.last_name, c.email
+            HAVING COUNT(p.policy_id) >= 2;
+        `;
+
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list all payments in ascending order of date
+router.get('/payments', async (req, res) => {
+    try {
+        const query = `
+            SELECT method, date, amount
+            FROM payments
+            ORDER BY date ASC;
+        `;
+
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

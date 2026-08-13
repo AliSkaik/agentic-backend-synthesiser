@@ -1,0 +1,69 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE calendar_items (
+    id SERIAL PRIMARY KEY,
+    date DATE NOT NULL,
+    day_number INT NOT NULL,
+    document_type VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE document_types (
+    id SERIAL PRIMARY KEY,
+    type_name VARCHAR(255) NOT NULL UNIQUE
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to count the number of all calendar items
+router.get('/calendar-items/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM calendar_items');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to show all calendar dates and day numbers
+router.get('/calendar-items', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT date, day_number FROM calendar_items');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to show the number of document types
+router.get('/document-types/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM document_types');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - `calendar_items` table stores information about each calendar item, including the date, day number, and document type.
+   - `document_types` table stores different types of documents.
+
+2. **Express Router**:
+   - `/calendar-items/count`: Returns the total count of all calendar items.
+   - `/calendar-items`: Returns a list of all calendar dates and day numbers.
+   - `/document-types/count`: Returns the total count of document types.
+
+Each endpoint uses `pool.query` to interact with the PostgreSQL database. The results are then returned as JSON responses.

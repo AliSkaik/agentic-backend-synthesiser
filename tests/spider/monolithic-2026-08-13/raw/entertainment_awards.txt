@@ -1,0 +1,91 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE artworks (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE festivals (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    location VARCHAR(255),
+    year_held INT,
+    chair_name VARCHAR(255)
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. How many artworks are there?
+router.get('/artworks/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM artworks');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. List the name of artworks in ascending alphabetical order.
+router.get('/artworks/names', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM artworks ORDER BY name ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. List the name of artworks whose type is not "Program Talent Show".
+router.get('/artworks/types', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM artworks WHERE type != $1 ORDER BY name ASC', ['Program Talent Show']);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. What are the names and locations of festivals?
+router.get('/festivals/names-and-locations', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, location FROM festivals');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 5. What are the names of the chairs of festivals, sorted in ascending order of the year held?
+router.get('/festivals/chairs', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT chair_name FROM festivals ORDER BY year_held ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Artworks Table**: Stores information about artworks, including their name, type, and creation timestamp.
+2. **Festivals Table**: Stores information about festivals, including their name, location, year held, and chair's name.
+
+The Express router provides endpoints to answer the specified questions:
+- `/artworks/count`: Returns the total number of artworks.
+- `/artworks/names`: Lists all artwork names in ascending alphabetical order.
+- `/artworks/types`: Lists names of artworks whose type is not "Program Talent Show".
+- `/festivals/names-and-locations`: Returns the names and locations of all festivals.
+- `/festivals/chairs`: Returns the names of festival chairs, sorted by the year they were held.

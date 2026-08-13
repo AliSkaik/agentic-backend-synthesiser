@@ -1,0 +1,107 @@
+### PostgreSQL Schema
+
+First, let's design the database schema for the gymnast system.
+
+```sql
+CREATE TABLE gymnasts (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    floor_exercise_points NUMERIC(5, 2),
+    vault_points NUMERIC(5, 2),
+    bars_points NUMERIC(5, 2),
+    beam_points NUMERIC(5, 2)
+);
+```
+
+### Express Router
+
+Next, let's create an Express router to handle the REST endpoints for this schema.
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the total number of gymnasts
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM gymnasts');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list the total points of gymnasts in descending order
+router.get('/total-points', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                id,
+                name,
+                floor_exercise_points + vault_points + bars_points + beam_points AS total_points
+            FROM 
+                gymnasts
+            ORDER BY 
+                total_points DESC;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list the total points of gymnasts in descending order of floor exercise points
+router.get('/total-points-floor', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                id,
+                name,
+                floor_exercise_points + vault_points + bars_points + beam_points AS total_points
+            FROM 
+                gymnasts
+            ORDER BY 
+                floor_exercise_points DESC;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema (`gymnasts` table)**:
+   - The `id` column is the primary key and auto-increments.
+   - The `name` column stores the name of the gymnast.
+   - The `floor_exercise_points`, `vault_points`, `bars_points`, and `beam_points` columns store the points for each event.
+
+2. **Express Router**:
+   - `/count`: Returns the total number of gymnasts in the database.
+   - `/total-points`: Returns a list of all gymnasts with their total points, ordered by total points in descending order.
+   - `/total-points-floor`: Returns a list of all gymnasts with their total points, ordered by floor exercise points in descending order.
+
+### Usage
+
+To use this router, you would typically import it into your main application file and mount it to the appropriate path. For example:
+
+```javascript
+import express from 'express';
+import gymnastRouter from './routes/gymnast.js';
+
+const app = express();
+app.use('/api/gymnasts', gymnastRouter);
+
+// Other routes and middleware...
+
+app.listen(3000, () => {
+    console.log('Server is running on port 3000');
+});
+```
+
+This setup will allow you to interact with the gymnast data through the defined REST endpoints.

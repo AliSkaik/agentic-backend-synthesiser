@@ -1,0 +1,83 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE departments (
+    department_id SERIAL PRIMARY KEY,
+    department_name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE employees (
+    employee_id SERIAL PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    salary NUMERIC(10, 2) NOT NULL,
+    department_id INT REFERENCES departments(department_id)
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to display the first name and department name for each employee
+router.get('/employees/departments', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT e.first_name, d.department_name
+            FROM employees e
+            JOIN departments d ON e.department_id = d.department_id;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list the full name and salary for those employees who earn below 6000
+router.get('/employees/salary', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT e.first_name || ' ' || e.last_name AS full_name, e.salary
+            FROM employees e
+            WHERE e.salary < 6000;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to display the first name and department number for all employees whose last name is "McEwen"
+router.get('/employees/mcewen', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT e.first_name, e.department_id
+            FROM employees e
+            WHERE e.last_name = 'McEwen';
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - `departments` table with columns for `department_id` and `department_name`.
+   - `employees` table with columns for `employee_id`, `first_name`, `last_name`, `salary`, and a foreign key `department_id` referencing the `departments` table.
+
+2. **Express Router**:
+   - Three endpoints are defined to handle different queries:
+     - `/employees/departments`: Returns the first name and department name for each employee.
+     - `/employees/salary`: Returns the full name (first and last name) and salary for employees earning below 6000.
+     - `/employees/mcewen`: Returns the first name and department number for all employees whose last name is "McEwen".
+
+Each endpoint uses `pool.query` to execute a SQL query against the PostgreSQL database. The results are then returned as JSON responses.

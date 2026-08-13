@@ -1,0 +1,93 @@
+### PostgreSQL Schema
+
+First, let's design the database schema for the manufacturer system.
+
+```sql
+CREATE TABLE manufacturers (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE furniture_components (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    amount INTEGER NOT NULL,
+    market_rate NUMERIC(10, 2) NOT NULL,
+    manufacturer_id INT REFERENCES manufacturers(id)
+);
+```
+
+### Express Router
+
+Now, let's create an Express router to handle the REST endpoints for this schema.
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get total number of furniture components
+router.get('/total-components', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT SUM(amount) AS total_components FROM furniture_components');
+        res.json({ total_components: result.rows[0].total_components });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the name and id of the furniture with the highest market rate
+router.get('/highest-market-rate', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, id FROM furniture_components ORDER BY market_rate DESC LIMIT 1');
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the total market rate of the furnitures that have the top 2 market shares
+router.get('/top-2-market-shares', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT SUM(market_rate) AS total_market_rate FROM furniture_components ORDER BY market_rate DESC LIMIT 2');
+        res.json({ total_market_rate: result.rows[0].total_market_rate });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the component amounts and names of all furnitures that have more than 10 components
+router.get('/components-more-than-10', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, amount FROM furniture_components WHERE amount > 10');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the name and component amount of the least popular furniture
+router.get('/least-popular-furniture', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, amount FROM furniture_components ORDER BY amount ASC LIMIT 1');
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - `manufacturers` table stores information about manufacturers.
+   - `furniture_components` table stores information about furniture components, including their amount and market rate.
+
+2. **Express Router**:
+   - Each endpoint corresponds to a specific query as described in the problem statement.
+   - The queries are executed using `pool.query`, which is imported from the `../db.js` file (assuming you have a PostgreSQL connection pool set up there).
+
+This setup should allow you to interact with your database and retrieve the required information through REST endpoints.

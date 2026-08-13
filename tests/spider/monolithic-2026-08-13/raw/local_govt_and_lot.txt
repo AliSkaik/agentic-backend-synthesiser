@@ -1,0 +1,137 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE organizations (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    detail TEXT
+);
+
+CREATE TABLE properties (
+    id SERIAL PRIMARY KEY,
+    organization_id INT REFERENCES organizations(id),
+    address VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE residents (
+    id SERIAL PRIMARY KEY,
+    property_id INT REFERENCES properties(id),
+    name VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE services (
+    id SERIAL PRIMARY KEY,
+    service_type VARCHAR(255) NOT NULL,
+    details TEXT
+);
+
+CREATE TABLE requests (
+    id SERIAL PRIMARY KEY,
+    resident_id INT REFERENCES residents(id),
+    service_id INT REFERENCES services(id)
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. How many residents does each property have? List property id and resident count.
+router.get('/properties/residents-count', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT p.id AS property_id, COUNT(r.id) AS resident_count
+            FROM properties p
+            LEFT JOIN residents r ON p.id = r.property_id
+            GROUP BY p.id;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. What is the distinct service types that are provided by the organization which has detail 'Denesik and Sons Party'? 
+router.get('/services/types-by-organization', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT DISTINCT s.service_type
+            FROM services s
+            JOIN requests r ON s.id = r.service_id
+            JOIN residents res ON r.resident_id = res.id
+            JOIN properties p ON res.property_id = p.id
+            JOIN organizations o ON p.organization_id = o.id
+            WHERE o.detail = 'Denesik and Sons Party';
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. What is the maximum number that a certain service is provided? List the service id, details and number.
+router.get('/services/max-provided', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT s.id AS service_id, s.details, COUNT(r.id) AS count
+            FROM services s
+            JOIN requests r ON s.id = r.service_id
+            GROUP BY s.id, s.details
+            ORDER BY count DESC
+            LIMIT 1;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. List the resident id, details, and the count in descending order of the count.
+router.get('/residents/services-count', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT r.id AS resident_id, r.name AS resident_details, COUNT(r.id) AS service_count
+            FROM residents r
+            JOIN requests req ON r.id = req.resident_id
+            GROUP BY r.id, r.name
+            ORDER BY service_count DESC;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 5. List the id and type of each thing, and the details of the organization that owns it.
+router.get('/things', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT p.id AS property_id, p.address AS property_address, o.detail AS organization_detail
+            FROM properties p
+            JOIN organizations o ON p.organization_id = o.id;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Properties and Residents**: Each property is associated with an organization, and each resident lives in a property.
+2. **Services and Requests**: Services are provided by the organization, and residents can request these services.
+3. **Organizations**: Organizations have details that can be used to filter data.
+
+The Express router provides endpoints for querying the database based on the requirements:
+- `/properties/residents-count`: Returns the number of residents per property.
+- `/services/types-by-organization`: Returns distinct service types provided by a specific organization.
+- `/services/max-provided`: Returns the most requested service and its count.
+- `/residents/services-count`: Returns each resident's ID, details, and the count of services they have requested, sorted in descending order.
+- `/things`: Returns the ID and type of each property along with the detail of the organization that owns it.

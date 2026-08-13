@@ -1,0 +1,6 @@
+CREATE TABLE faculty (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    rank VARCHAR(100) NOT NULL,
+    building VARCHAR(100) NOT NULL
+);

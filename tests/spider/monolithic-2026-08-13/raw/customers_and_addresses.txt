@@ -1,0 +1,73 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE customers (
+    customer_id SERIAL PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL
+);
+
+CREATE TABLE addresses (
+    address_id SERIAL PRIMARY KEY,
+    customer_id INT REFERENCES customers(customer_id),
+    street VARCHAR(255) NOT NULL,
+    city VARCHAR(100) NOT NULL,
+    state VARCHAR(50) NOT NULL,
+    zip_code VARCHAR(20) NOT NULL
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the names of all customers
+router.get('/customers/names', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT first_name, last_name FROM customers');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the total number of distinct customers
+router.get('/customers/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(DISTINCT customer_id) AS total_customers FROM customers');
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the average amount of items ordered in each order
+router.get('/orders/average-items', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT AVG(items_ordered) AS average_items FROM orders');
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - `customers` table stores customer details including their ID, first name, last name, and email.
+   - `addresses` table stores address details linked to a customer via the `customer_id`.
+
+2. **Express Router**:
+   - `/customers/names`: Returns an array of objects containing the first and last names of all customers.
+   - `/customers/count`: Returns the total number of distinct customers.
+   - `/orders/average-items`: Returns the average amount of items ordered in each order (assuming there is another table `orders` with a column `items_ordered`).
+
+Make sure to replace `../db.js` with the correct path to your PostgreSQL connection pool setup.

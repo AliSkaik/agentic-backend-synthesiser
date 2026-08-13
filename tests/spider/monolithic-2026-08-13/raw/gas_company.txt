@@ -1,0 +1,72 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE gas_companies (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    headquarters_country VARCHAR(100),
+    main_industry VARCHAR(100),
+    sales NUMERIC(15, 2)
+);
+```
+
+### Express Router (ES Module)
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the total number of gas companies
+router.get('/total-companies', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM gas_companies');
+        res.json({ totalCompanies: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list company name and rank for all companies in decreasing order of their sales
+router.get('/companies-by-sales', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT name, RANK() OVER (ORDER BY sales DESC) AS rank
+            FROM gas_companies
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to show the company name and main industry for all companies whose headquarters are not from USA
+router.get('/companies-not-from-usa', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT name, main_industry
+            FROM gas_companies
+            WHERE headquarters_country != 'USA'
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - The `gas_companies` table includes columns for `id`, `name`, `headquarters_country`, `main_industry`, and `sales`.
+
+2. **Express Router**:
+   - Three endpoints are defined:
+     1. `/total-companies`: Returns the total number of gas companies.
+     2. `/companies-by-sales`: Returns a list of company names and their ranks based on sales in descending order.
+     3. `/companies-not-from-usa`: Returns the name and main industry of companies whose headquarters are not from the USA.
+
+Each endpoint uses `pool.query` to execute SQL queries against the PostgreSQL database, handling errors appropriately and returning the results as JSON.

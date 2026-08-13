@@ -1,0 +1,111 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE items (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    price NUMERIC(10, 2)
+);
+
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE reviews (
+    id SERIAL PRIMARY KEY,
+    item_id INT REFERENCES items(id),
+    user_id INT REFERENCES users(id),
+    rating INT CHECK (rating >= 1 AND rating <= 5),
+    comment TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Find the id of the item whose title is "orange"
+router.get('/items/orange', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id FROM items WHERE title = $1', ['orange']);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Item not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// List all information in the item table
+router.get('/items', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM items');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Find the number of reviews
+router.get('/reviews/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM reviews');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// How many users are there?
+router.get('/users/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM users');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Find the average and maximum rating of all reviews
+router.get('/reviews/stats', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                AVG(rating) AS avg_rating,
+                MAX(rating) AS max_rating
+            FROM reviews
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - `items` table stores information about items.
+   - `users` table stores user information.
+   - `reviews` table stores reviews for items, linked to both the item and the user who wrote the review.
+
+2. **Express Router**:
+   - `/items/orange`: Retrieves the ID of the item with the title "orange".
+   - `/items`: Lists all items in the database.
+   - `/reviews/count`: Returns the total number of reviews.
+   - `/users/count`: Returns the total number of users.
+   - `/reviews/stats`: Returns the average and maximum rating of all reviews.
+
+Each endpoint uses a `pool.query` to interact with the PostgreSQL database, ensuring that the queries are executed safely and efficiently.

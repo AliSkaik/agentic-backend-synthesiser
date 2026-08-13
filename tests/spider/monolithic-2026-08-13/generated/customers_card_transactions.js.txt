@@ -1,0 +1,47 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to count the number of accounts
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM accounts');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to show ids, customer ids, names for all accounts
+router.get('/all', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT a.account_id, a.customer_id, c.name AS customer_name
+            FROM accounts a
+            JOIN customers c ON a.customer_id = c.customer_id
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to show other account details for account with name 338
+router.get('/details', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT *
+            FROM accounts
+            WHERE account_name = $1
+        `, ['338']);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Account not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

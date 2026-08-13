@@ -1,0 +1,36 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. How many albums are there?
+router.get('/albums/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM albums');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. List the names of all music genres.
+router.get('/genres', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM genres');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. Find all the customer information in state NY.
+router.get('/customers/ny', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM customers WHERE state = $1', ['NY']);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

@@ -1,0 +1,85 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE body_builders (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    snatch_score INT NOT NULL,
+    clean_jerk_score INT NOT NULL,
+    total_score INT NOT NULL
+);
+```
+
+### Express Router (ES Module)
+
+```javascript
+import express from 'express';
+import { pool } from '../db.js';
+
+const router = express.Router();
+
+// 1. How many body builders are there?
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM body_builders');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. List the total scores of body builders in ascending order.
+router.get('/total-scores', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT total_score FROM body_builders ORDER BY total_score ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. List the snatch score and clean jerk score of body builders in ascending order of snatch score.
+router.get('/snatch-scores', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, snatch_score, clean_jerk_score FROM body_builders ORDER BY snatch_score ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. What is the average snatch score of body builders?
+router.get('/average-snatch-score', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT AVG(snatch_score) AS average_snatch_score FROM body_builders');
+        res.json({ averageSnatchScore: result.rows[0].average_snatch_score });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 5. What are the clean and jerk score of the body builder with the highest total score?
+router.get('/highest-total-score', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, clean_jerk_score FROM body_builders WHERE total_score = (SELECT MAX(total_score) FROM body_builders)');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Count of Body Builders**: This endpoint returns the total number of body builders in the database.
+2. **Total Scores Ascending**: This endpoint lists all body builders sorted by their total scores in ascending order.
+3. **Snatch Scores Ascending**: This endpoint lists all body builders sorted by their snatch scores in ascending order, along with their names and clean jerk scores.
+4. **Average Snatch Score**: This endpoint calculates the average snatch score of all body builders.
+5. **Highest Total Score Clean Jerk**: This endpoint returns the name and clean jerk score of the body builder with the highest total score.
+
+### Notes
+
+- Ensure that you have a PostgreSQL database set up and that the `pool` is correctly configured to connect to it.
+- The `db.js` file should export a connection pool (`pool`) that can be used to query the database.

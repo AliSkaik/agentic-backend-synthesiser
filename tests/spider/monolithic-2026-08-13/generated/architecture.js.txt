@@ -1,0 +1,68 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. How many architects are female?
+router.get('/architects/female-count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM architects WHERE gender = \'F\'');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. List the name, nationality and id of all male architects ordered by their names lexicographically.
+router.get('/architects/male', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, nationality, id FROM architects WHERE gender = \'M\' ORDER BY name');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. What is the maximum length in meters for the bridges and what are the architects' names?
+router.get('/bridges/max-length', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT MAX(length_meters), a.name
+            FROM bridges b
+            JOIN architects a ON b.architect_id = a.id
+            GROUP BY a.name
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. What is the average length in feet of the bridges?
+router.get('/bridges/average-length-feet', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT AVG(length_meters * 3.28084) AS avg_length_feet
+            FROM bridges
+        `);
+        res.json({ averageLengthFeet: result.rows[0].avg_length_feet });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 5. What are the names and year of construction for the mills of 'Grondzeiler' type?
+router.get('/mills/grondzeiler', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT m.name, m.year_of_construction
+            FROM mills m
+            WHERE m.type = 'Grondzeiler'
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

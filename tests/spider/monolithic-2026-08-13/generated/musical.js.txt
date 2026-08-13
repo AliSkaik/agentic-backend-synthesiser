@@ -1,0 +1,45 @@
+import express from 'express';
+import { Pool } from 'pg';
+
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+});
+
+const router = express.Router();
+
+// Endpoint to count the number of actors
+router.get('/actors/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM actors');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list the names of actors in ascending alphabetical order
+router.get('/actors', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM actors ORDER BY name ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the names of actors and their characters with durations
+router.get('/actors/characters', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT a.name AS actor_name, c.character_name, EXTRACT(EPOCH FROM c.duration) AS duration_seconds
+            FROM actors a
+            JOIN characters c ON a.actor_id = c.actor_id
+            ORDER BY a.name ASC;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

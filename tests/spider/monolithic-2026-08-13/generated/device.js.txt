@@ -1,0 +1,46 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. How many devices are there?
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM devices');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. List the carriers of devices in ascending alphabetical order.
+router.get('/carriers', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT DISTINCT carrier FROM devices ORDER BY carrier ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. What are the different carriers for devices, listed in alphabetical order?
+router.get('/carriers-alphabetical', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT DISTINCT carrier FROM devices ORDER BY carrier ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. What are the carriers of devices whose software platforms are not "Android"?
+router.get('/carriers-not-android', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT DISTINCT carrier FROM devices WHERE software_platform != \'Android\' ORDER BY carrier ASC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

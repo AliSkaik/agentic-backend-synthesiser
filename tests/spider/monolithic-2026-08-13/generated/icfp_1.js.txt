@@ -1,0 +1,36 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to count the number of authors
+router.get('/authors/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM authors');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to count the number of institutions
+router.get('/institutions/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM institutions');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to count the number of papers
+router.get('/papers/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM papers');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

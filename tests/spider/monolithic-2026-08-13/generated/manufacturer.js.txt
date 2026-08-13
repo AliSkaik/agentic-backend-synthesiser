@@ -1,0 +1,56 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get total number of furniture components
+router.get('/total-components', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT SUM(amount) AS total_components FROM furniture_components');
+        res.json({ total_components: result.rows[0].total_components });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the name and id of the furniture with the highest market rate
+router.get('/highest-market-rate', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, id FROM furniture_components ORDER BY market_rate DESC LIMIT 1');
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the total market rate of the furnitures that have the top 2 market shares
+router.get('/top-2-market-shares', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT SUM(market_rate) AS total_market_rate FROM furniture_components ORDER BY market_rate DESC LIMIT 2');
+        res.json({ total_market_rate: result.rows[0].total_market_rate });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the component amounts and names of all furnitures that have more than 10 components
+router.get('/components-more-than-10', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, amount FROM furniture_components WHERE amount > 10');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the name and component amount of the least popular furniture
+router.get('/least-popular-furniture', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, amount FROM furniture_components ORDER BY amount ASC LIMIT 1');
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

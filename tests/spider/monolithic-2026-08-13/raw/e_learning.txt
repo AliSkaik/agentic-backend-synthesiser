@@ -1,0 +1,81 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE authors (
+    id SERIAL PRIMARY KEY,
+    personal_name VARCHAR(255) NOT NULL,
+    address TEXT
+);
+
+CREATE TABLE courses (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    author_id INT REFERENCES authors(id)
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. How many courses are there in total?
+router.get('/total-courses', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM courses');
+        res.json({ total_courses: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. Find the total number of courses offered.
+router.get('/total-offered-courses', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM courses');
+        res.json({ total_offered_courses: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. What are the descriptions of the courses with name "database"?
+router.get('/courses-by-name/database', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT description FROM courses WHERE name = $1', ['database']);
+        res.json({ course_descriptions: result.rows.map(row => row.description) });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. What are the addresses of the course authors or tutors with personal name "Cathrine"?
+router.get('/authors-by-name/Cathrine', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT address FROM authors WHERE personal_name = $1', ['Cathrine']);
+        res.json({ author_addresses: result.rows.map(row => row.address) });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Schema**:
+   - `authors` table with columns for `id`, `personal_name`, and `address`.
+   - `courses` table with columns for `id`, `name`, `description`, and a foreign key `author_id` referencing the `authors` table.
+
+2. **Router**:
+   - `/total-courses`: Returns the total number of courses.
+   - `/total-offered-courses`: Alias for `/total-courses`.
+   - `/courses-by-name/database`: Returns descriptions of courses with the name "database".
+   - `/authors-by-name/Cathrine`: Returns addresses of authors with the personal name "Cathrine".
+
+This setup ensures that you can query the database using REST endpoints and handle the responses appropriately.

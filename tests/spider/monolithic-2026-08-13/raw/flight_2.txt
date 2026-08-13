@@ -1,0 +1,112 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE countries (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    abbreviation CHAR(2) UNIQUE NOT NULL
+);
+
+CREATE TABLE airlines (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    abbreviation CHAR(3) UNIQUE NOT NULL,
+    country_id INT REFERENCES countries(id)
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the country of an airline by name
+router.get('/airline-country/:name', async (req, res) => {
+    const { name } = req.params;
+    try {
+        const result = await pool.query(`
+            SELECT c.name AS country_name
+            FROM airlines a
+            JOIN countries c ON a.country_id = c.id
+            WHERE a.name = $1
+        `, [name]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Airline not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Endpoint to get the affiliated country of an airline by name
+router.get('/airline-affiliated-country/:name', async (req, res) => {
+    const { name } = req.params;
+    try {
+        const result = await pool.query(`
+            SELECT c.name AS affiliated_country_name
+            FROM airlines a
+            JOIN countries c ON a.country_id = c.id
+            WHERE a.name = $1
+        `, [name]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Airline not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Endpoint to get the abbreviation of an airline by name
+router.get('/airline-abbreviation/:name', async (req, res) => {
+    const { name } = req.params;
+    try {
+        const result = await pool.query(`
+            SELECT a.abbreviation AS airline_abbreviation
+            FROM airlines a
+            WHERE a.name = $1
+        `, [name]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Airline not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Endpoint to get the name and abbreviation of all airlines in USA
+router.get('/airlines-in-usa', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT a.name AS airline_name, a.abbreviation AS airline_abbreviation
+            FROM airlines a
+            JOIN countries c ON a.country_id = c.id
+            WHERE c.name = 'USA'
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - `countries` table stores information about countries, including their names and abbreviations.
+   - `airlines` table stores information about airlines, including their names, abbreviations, and the country they belong to.
+
+2. **Express Router**:
+   - `/airline-country/:name`: Returns the country of an airline by its name.
+   - `/airline-affiliated-country/:name`: Returns the affiliated country of an airline by its name (assuming this is a redundant query since it's the same as the previous one).
+   - `/airline-abbreviation/:name`: Returns the abbreviation of an airline by its name.
+   - `/airlines-in-usa`: Returns the names and abbreviations of all airlines in the USA.
+
+This setup assumes that the `country_id` in the `airlines` table correctly references the `id` in the `countries` table. Adjustments may be needed based on the actual data model and relationships.

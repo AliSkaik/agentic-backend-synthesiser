@@ -1,0 +1,68 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE clubs (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE
+);
+
+CREATE TABLE students (
+    id SERIAL PRIMARY KEY,
+    club_id INT REFERENCES clubs(id),
+    name VARCHAR(255) NOT NULL
+);
+```
+
+### Express Router (ES Module)
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Get the total number of clubs
+router.get('/clubs/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM clubs');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get the names of all clubs
+router.get('/clubs', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM clubs');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get the total number of students
+router.get('/students/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM students');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - `clubs` table with columns `id`, `name`.
+   - `students` table with columns `id`, `club_id`, `name`. The `club_id` is a foreign key referencing the `id` in the `clubs` table.
+
+2. **Express Router**:
+   - `/clubs/count`: Returns the total number of clubs.
+   - `/clubs`: Returns the names of all clubs.
+   - `/students/count`: Returns the total number of students.
+
+Each endpoint uses `pool.query` to execute SQL queries against the PostgreSQL database and returns the results in JSON format. Error handling is included to catch any issues that may arise during the query execution.

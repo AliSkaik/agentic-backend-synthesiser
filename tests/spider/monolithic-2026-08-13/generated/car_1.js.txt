@@ -1,0 +1,47 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the number of continents
+router.get('/continents/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM continents');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the number of countries
+router.get('/countries/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM countries');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the number of countries per continent
+router.get('/continents/countries', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                c.id AS continent_id,
+                c.name AS continent_name,
+                COUNT(co.id) AS country_count
+            FROM 
+                continents c
+            LEFT JOIN 
+                countries co ON c.id = co.continent_id
+            GROUP BY 
+                c.id, c.name;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

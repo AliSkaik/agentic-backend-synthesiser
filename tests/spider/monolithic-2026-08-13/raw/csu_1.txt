@@ -1,0 +1,87 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE campuses (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    county VARCHAR(100),
+    city VARCHAR(100),
+    year_opened INT
+);
+```
+
+### Express Router (ES Module)
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get all campuses in Los Angeles county
+router.get('/los-angeles-county', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM campuses WHERE county = $1', ['Los Angeles']);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get all campuses in Chico
+router.get('/chico', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM campuses WHERE city = $1', ['Chico']);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get all campuses opened in 1958
+router.get('/opened-1958', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM campuses WHERE year_opened = $1', [1958]);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - The `campuses` table has columns for `id`, `name`, `county`, `city`, and `year_opened`.
+   - `id` is a primary key with auto-increment.
+   - `name`, `county`, and `city` are strings.
+   - `year_opened` is an integer.
+
+2. **Express Router**:
+   - Three endpoints are defined:
+     - `/los-angeles-county`: Returns all campuses in Los Angeles county.
+     - `/chico`: Returns all campuses in Chico.
+     - `/opened-1958`: Returns all campuses opened in 1958.
+   - Each endpoint uses `pool.query` to execute a SQL query and returns the results as JSON.
+
+### Usage
+
+To use this router, you would typically import it into your main server file (e.g., `app.js`) and mount it:
+
+```javascript
+import express from 'express';
+import campusesRouter from './routes/campuses.js';
+
+const app = express();
+app.use(express.json());
+
+app.use('/api/campuses', campusesRouter);
+
+app.listen(3000, () => {
+    console.log('Server is running on port 3000');
+});
+```
+
+This setup will allow you to make GET requests to `/api/campuses/los-angeles-county`, `/api/campuses/chico`, and `/api/campuses/opened-1958` to retrieve the respective data.

@@ -1,0 +1,36 @@
+import express from 'express';
+import { pool } from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the total number of aircrafts
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM aircraft');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list the descriptions of all aircrafts
+router.get('/descriptions', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT description FROM aircraft');
+        res.json(result.rows.map(row => row.description));
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the average number of international passengers
+router.get('/average-passengers', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT AVG(international_passengers) AS avg_passengers FROM aircraft');
+        res.json({ averagePassengers: result.rows[0].avg_passengers });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

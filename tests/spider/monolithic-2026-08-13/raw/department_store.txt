@@ -1,0 +1,99 @@
+### PostgreSQL Schema
+
+First, let's design the database schema for the department store. We'll need tables for products, orders, and order items.
+
+```sql
+CREATE TABLE products (
+    id SERIAL PRIMARY KEY,
+    product_type VARCHAR(255) NOT NULL,
+    price NUMERIC(10, 2) NOT NULL
+);
+
+CREATE TABLE orders (
+    id SERIAL PRIMARY KEY,
+    customer_id INT NOT NULL,
+    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE order_items (
+    id SERIAL PRIMARY KEY,
+    order_id INT REFERENCES orders(id),
+    product_id INT REFERENCES products(id),
+    quantity INT NOT NULL
+);
+```
+
+### Express Router
+
+Now, let's create an Express router to handle the REST endpoints for querying the database.
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the ids of the top three products purchased in the largest amount
+router.get('/top-three-products', async (req, res) => {
+    try {
+        const query = `
+            SELECT oi.product_id, SUM(oi.quantity * p.price) AS total_amount
+            FROM order_items oi
+            JOIN products p ON oi.product_id = p.id
+            GROUP BY oi.product_id
+            ORDER BY total_amount DESC
+            LIMIT 3;
+        `;
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the id and product type of the cheapest product
+router.get('/cheapest-product', async (req, res) => {
+    try {
+        const query = `
+            SELECT id, product_type, price
+            FROM products
+            ORDER BY price ASC
+            LIMIT 1;
+        `;
+        const result = await pool.query(query);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the number of different product types
+router.get('/product-types-count', async (req, res) => {
+    try {
+        const query = `
+            SELECT COUNT(DISTINCT product_type) AS count
+            FROM products;
+        `;
+        const result = await pool.query(query);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - `products`: Stores information about each product, including its type and price.
+   - `orders`: Tracks each order made by a customer.
+   - `order_items`: Links orders to the products purchased in those orders, storing the quantity of each product.
+
+2. **Express Router**:
+   - `/top-three-products`: Returns the IDs of the top three products based on the total amount they were purchased for.
+   - `/cheapest-product`: Returns the ID and type of the cheapest product.
+   - `/product-types-count`: Returns the number of different product types available.
+
+Each endpoint uses a `pool.query` to execute the SQL query against the PostgreSQL database. The results are then returned as JSON responses.

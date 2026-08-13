@@ -1,0 +1,36 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to count the number of companies
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM companies');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list company names in descending order of market value
+router.get('/names-by-market-value', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM companies ORDER BY market_value DESC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list company names whose headquarters are not "USA"
+router.get('/names-not-usa', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM companies WHERE headquarters != \'USA\'');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

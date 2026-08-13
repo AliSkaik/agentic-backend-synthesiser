@@ -1,0 +1,92 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE songs (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    release_year INT,
+    duration_seconds INT,
+    language VARCHAR(50)
+);
+```
+
+### Express Router (ES Module)
+
+```javascript
+import express from 'express';
+import { pool } from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the name of the song released in the most recent year
+router.get('/most-recent-year', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT name FROM songs
+            WHERE release_year = (
+                SELECT MAX(release_year) FROM songs
+            )
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the name of the song released most recently
+router.get('/most-recent', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT name FROM songs
+            ORDER BY release_year DESC, id DESC
+            LIMIT 1
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the id of the longest song
+router.get('/longest-song-id', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT id FROM songs
+            ORDER BY duration_seconds DESC
+            LIMIT 1
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the names of all English songs
+router.get('/english-songs', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT name FROM songs
+            WHERE language = 'English'
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - The `songs` table includes columns for `id`, `name`, `release_year`, `duration_seconds`, and `language`.
+
+2. **Express Router**:
+   - Each endpoint queries the database using a SQL query.
+   - The `/most-recent-year` endpoint finds the song with the most recent release year.
+   - The `/most-recent` endpoint finds the song that was released most recently, considering both the release year and the ID to handle ties.
+   - The `/longest-song-id` endpoint finds the ID of the longest song based on duration.
+   - The `/english-songs` endpoint retrieves all songs where the language is English.
+
+This setup ensures that you can query your music database efficiently using REST endpoints.

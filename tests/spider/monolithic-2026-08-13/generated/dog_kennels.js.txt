@@ -1,0 +1,105 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to find states with both owners and professionals living there
+router.get('/states-with-both', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT s.id, s.name
+            FROM states s
+            WHERE EXISTS (
+                SELECT 1
+                FROM owners o
+                WHERE o.state_id = s.id
+            )
+            AND EXISTS (
+                SELECT 1
+                FROM professionals p
+                WHERE p.state_id = s.id
+            );
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the average age of dogs who have gone through any treatments
+router.get('/average-age-of-dogs-with-treatments', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT AVG(d.age)
+            FROM dogs d
+            JOIN treatments t ON d.id = t.dog_id;
+        `);
+        res.json({ average_age: result.rows[0].avg });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the states where both owners and professionals live
+router.get('/states-with-both', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT s.id, s.name
+            FROM states s
+            WHERE EXISTS (
+                SELECT 1
+                FROM owners o
+                WHERE o.state_id = s.id
+            )
+            AND EXISTS (
+                SELECT 1
+                FROM professionals p
+                WHERE p.state_id = s.id
+            );
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the average age of dogs who went through treatments
+router.get('/average-age-of-dogs-with-treatments', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT AVG(d.age)
+            FROM dogs d
+            JOIN treatments t ON d.id = t.dog_id;
+        `);
+        res.json({ average_age: result.rows[0].avg });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find professionals living in Indiana or have done treatment on more than 2 treatments
+router.get('/professionals-in-indiana-or-more-than-2-treatments', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT p.id, p.last_name, p.cell_phone
+            FROM professionals p
+            WHERE p.state_id = (
+                SELECT s.id
+                FROM states s
+                WHERE s.name = 'Indiana'
+            )
+            OR EXISTS (
+                SELECT 1
+                FROM treatments t
+                WHERE t.professional_id = p.id
+                GROUP BY t.professional_id
+                HAVING COUNT(t.id) > 2
+            );
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

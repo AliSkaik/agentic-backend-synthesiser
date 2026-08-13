@@ -1,0 +1,10 @@
+CREATE TABLE clubs (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE
+);
+
+CREATE TABLE students (
+    id SERIAL PRIMARY KEY,
+    club_id INT REFERENCES clubs(id),
+    name VARCHAR(255) NOT NULL
+);

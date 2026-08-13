@@ -1,0 +1,36 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to find the names of all-female dorms
+router.get('/female-dorms', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM dorms WHERE gender = \'F\'');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the names of all dorms that can accommodate more than 300 students
+router.get('/large-dorms', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM dorms WHERE capacity > 300');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the number of female students below 25 years old
+router.get('/female-students-under-25', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM students WHERE sex = \'F\' AND age < 25');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

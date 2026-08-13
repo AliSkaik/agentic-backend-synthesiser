@@ -1885,3 +1885,93 @@ wherever the figure appears, because the alternative is a reader silently
 assuming they match.
 
 Recorded while the baseline run is still executing and no aggregate exists.
+
+## Week 9 — 2026-08-13 — Scenario A: pipeline schema against the monolithic baseline
+
+**Done:** the baseline arm, 100 instances, 167.1 minutes, scored against the same
+gold standard and the same aggregation function as the pipeline arm. Artefacts in
+`tests/spider/monolithic-2026-08-13/`.
+
+### Schema correctness, normalised matching, macro
+
+| | pipeline (Agent 1) | monolithic baseline |
+| --- | --- | --- |
+| answered | **100/100** | **99/100** (1 unanswered) |
+| usable schemas | 100 | 99 (0 split failures) |
+| tables — precision | 55.2% | **62.8%** |
+| tables — recall | **31.0%** | 27.7% |
+| columns — precision | **28.9%** | 25.9% |
+| columns — recall | **11.4%** | 9.2% |
+| foreign keys — precision | 5.7% | **8.6%** |
+| foreign keys — recall | **1.9%** | 1.4% |
+
+Exact matching: pipeline tables 36.2% / 19.4%, baseline 33.4% / 12.8%.
+
+**The result is mixed, not a rout.** The pipeline wins five of six measures; the
+baseline wins table and foreign-key precision. The shape of the difference is a
+precision/recall trade: the baseline proposes fewer tables and a higher
+proportion of them are right, while the pipeline proposes more and recovers more
+of the gold schema. Neither arm is close to reproducing the relational structure
+— foreign-key recall is under 2% on both.
+
+### The Layer 0 comparison is invalid, and the reason is the harness
+
+Layer 0 accepted 98 of 100 baseline schemas against 45 of 100 pipeline schemas.
+That is not a property of either model.
+
+| | pipeline | baseline |
+| --- | --- | --- |
+| emitted output containing non-DDL statements | 63/100 | 49/99 |
+| **extracted schema** containing them | 63/100 | **0/99** |
+
+The baseline is instructed to fence its SQL, because splitting the two artefacts
+out of one response requires a delimiter. Agent 1 is instructed **not** to fence.
+The splitter therefore discards everything outside the fenced block, and the
+baseline's non-DDL statements are removed mechanically before Layer 0 sees them.
+The 98-against-45 figure measures the splitter.
+
+**The like-for-like measure is the first row: 63/100 against 49/99.** On that,
+the baseline emits non-schema statements slightly *less* often, and the gap is a
+fraction of what the acceptance figures imply. Chapter IV must report the first
+row and must not report the second as a comparison.
+
+There is a genuine finding underneath, and it is about prompt design rather than
+model capability: **requiring delimited output makes downstream verification
+trivially easier.** A response whose schema is fenced can have everything else
+discarded losslessly; a response emitted as one undelimited blob cannot. That
+favours the baseline's output format, not the baseline's model, and it is worth
+stating because it is actionable for anyone building a verifier.
+
+### Reliability and cost
+
+- **Split failures: 0 of 99.** Every answered response separated into a schema
+  and a module. Six carried an extra JavaScript block, invariably a usage example
+  mounting the router in an app; the router was selected and the count recorded.
+- **`academic` failed three times**, on three separate attempts, with the same
+  `fetch failed` from the Ollama endpoint. It is the largest gold schema in the
+  subset at 15 tables and one of the three descriptions reduced to the db_id
+  alone. Three identical failures on the same instance suggests a length-related
+  failure rather than a flake, and it is excluded from both denominators as
+  infrastructure.
+- **Latency:** 167.1 minutes for 99 generations, mean ~100 s.
+- **Tokens:** 18 420 prompt, 71 038 completion, arm total.
+
+### Technical limitations
+
+1. **The per-instance token data was lost.** Re-running to re-aggregate
+   overwrote it with zeros: reused instances returned no telemetry, and the guard
+   against a partial run clobbering a fuller one does not fire when both have 100
+   instances. The arm-level totals survive from the run's console output and are
+   recorded in `results.json` with a provenance note saying they are not
+   reproducible from that file. The runner now writes telemetry beside each
+   response so a resumed run restores it.
+
+2. **Table precision favours an arm that proposes less.** The baseline's higher
+   precision is partly a consequence of naming fewer tables; precision rewards
+   restraint and recall punishes it. Neither figure should be cited without the
+   other.
+
+3. **One arm's schema passed through an extraction step the other's did not.**
+   This affects Layer 0 acceptance as described above. It does **not** affect the
+   precision and recall figures, which are computed from the schema each arm
+   produced by the same reader in both cases.

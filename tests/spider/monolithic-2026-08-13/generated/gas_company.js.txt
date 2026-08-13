@@ -1,0 +1,43 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the total number of gas companies
+router.get('/total-companies', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM gas_companies');
+        res.json({ totalCompanies: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list company name and rank for all companies in decreasing order of their sales
+router.get('/companies-by-sales', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT name, RANK() OVER (ORDER BY sales DESC) AS rank
+            FROM gas_companies
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to show the company name and main industry for all companies whose headquarters are not from USA
+router.get('/companies-not-from-usa', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT name, main_industry
+            FROM gas_companies
+            WHERE headquarters_country != 'USA'
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

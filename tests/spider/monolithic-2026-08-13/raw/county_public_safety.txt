@@ -1,0 +1,92 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE counties (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    population INT NOT NULL,
+    location VARCHAR(255)
+);
+
+CREATE TABLE police_forces (
+    id SERIAL PRIMARY KEY,
+    county_id INT REFERENCES counties(id),
+    force_name VARCHAR(255) NOT NULL
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. How many counties are there?
+router.get('/counties/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM counties');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. List the names of counties in descending order of population.
+router.get('/counties/population-desc', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM counties ORDER BY population DESC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. List the names of the counties of public safety, ordered by population descending.
+router.get('/counties/public-safety/population-desc', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT c.name
+            FROM counties c
+            JOIN police_forces pf ON c.id = pf.county_id
+            WHERE c.location != 'east side'
+            ORDER BY c.population DESC
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. List the distinct police forces of counties whose location is not on east side.
+router.get('/counties/public-safety/police-forces', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT DISTINCT pf.force_name
+            FROM counties c
+            JOIN police_forces pf ON c.id = pf.county_id
+            WHERE c.location != 'east side'
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Schema**:
+   - The `counties` table stores information about each county, including its name, population, and location.
+   - The `police_forces` table links counties to their respective police forces.
+
+2. **Endpoints**:
+   - `/counties/count`: Returns the total number of counties.
+   - `/counties/population-desc`: Lists all county names ordered by population in descending order.
+   - `/counties/public-safety/population-desc`: Lists county names that have public safety (i.e., have police forces) and are not located on the east side, ordered by population in descending order.
+   - `/counties/public-safety/police-forces`: Lists distinct police force names for counties that are not located on the east side.
+
+Each endpoint uses a `pool.query` to execute the corresponding SQL query and returns the results as JSON.

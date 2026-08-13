@@ -1,0 +1,44 @@
+import { Router } from 'express';
+import pool from '../db.js';
+
+const router = Router();
+
+// Endpoint to get the founder of a company by name
+router.get('/founder/:name', async (req, res) => {
+    const { name } = req.params;
+    try {
+        const result = await pool.query('SELECT founder FROM manufacturers WHERE name = $1', [name]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Manufacturer not found' });
+        }
+        res.json(result.rows[0].founder);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get the headquarters of a company by founder's name
+router.get('/headquarters/:founder', async (req, res) => {
+    const { founder } = req.params;
+    try {
+        const result = await pool.query('SELECT headquarters FROM manufacturers WHERE founder = $1', [founder]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Manufacturer not found' });
+        }
+        res.json(result.rows[0].headquarters);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get all manufacturers' names and their headquarters, sorted by revenue
+router.get('/all', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name, headquarters FROM manufacturers ORDER BY revenue DESC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

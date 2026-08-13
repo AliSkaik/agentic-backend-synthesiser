@@ -1,0 +1,96 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. What are the event details of the services that have the type code 'Marriage'?
+router.get('/events/marriage', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT details
+            FROM events
+            WHERE type_code = 'Marriage'
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 2. What are the ids and details of events that have more than one participants?
+router.get('/events/multiple-participants', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT e.id, e.details
+            FROM events e
+            JOIN event_participants ep ON e.id = ep.event_id
+            GROUP BY e.id, e.details
+            HAVING COUNT(ep.participant_id) > 1
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 3. How many events have each participants attended?
+router.get('/participants/attended-events', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT p.id AS participant_id, p.type, COUNT(e.id) AS event_count
+            FROM participants p
+            JOIN event_participants ep ON p.id = ep.participant_id
+            JOIN events e ON ep.event_id = e.id
+            GROUP BY p.id, p.type
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 4. List the participant id, type and the number.
+router.get('/participants/count', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT id, type, COUNT(*) AS count
+            FROM participants
+            GROUP BY id, type
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 5. What are all the participant ids, type code and details?
+router.get('/participants/all', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT p.id AS participant_id, p.type, p.details,
+                   e.id AS event_id, e.type_code, e.details
+            FROM participants p
+            LEFT JOIN event_participants ep ON p.id = ep.participant_id
+            LEFT JOIN events e ON ep.event_id = e.id
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 6. How many participants belong to the type 'Organizer'?
+router.get('/participants/organizers', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT COUNT(*) AS organizer_count
+            FROM participants
+            WHERE type = 'Organizer'
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+export default router;

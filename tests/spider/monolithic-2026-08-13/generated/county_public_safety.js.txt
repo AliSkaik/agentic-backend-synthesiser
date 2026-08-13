@@ -1,0 +1,57 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. How many counties are there?
+router.get('/counties/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM counties');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. List the names of counties in descending order of population.
+router.get('/counties/population-desc', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM counties ORDER BY population DESC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. List the names of the counties of public safety, ordered by population descending.
+router.get('/counties/public-safety/population-desc', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT c.name
+            FROM counties c
+            JOIN police_forces pf ON c.id = pf.county_id
+            WHERE c.location != 'east side'
+            ORDER BY c.population DESC
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. List the distinct police forces of counties whose location is not on east side.
+router.get('/counties/public-safety/police-forces', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT DISTINCT pf.force_name
+            FROM counties c
+            JOIN police_forces pf ON c.id = pf.county_id
+            WHERE c.location != 'east side'
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

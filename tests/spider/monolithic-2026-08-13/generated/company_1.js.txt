@@ -1,0 +1,56 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. List all department names ordered by their starting date.
+router.get('/departments', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM departments ORDER BY start_date');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. Find all dependent names who have a spouse relation with some employee.
+router.get('/dependents/spouse', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT first_name, last_name FROM dependents WHERE relation = \'spouse\'');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. How many female dependents are there?
+router.get('/dependents/female-count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM dependents WHERE relation = \'spouse\' AND first_name LIKE \'F%\'');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. Find the names of departments that are located in Houston.
+router.get('/departments/houston', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM departments WHERE location = \'Houston\'');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 5. Return the first names and last names of employees who earn more than 30000 in salary.
+router.get('/employees/salary', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT first_name, last_name FROM employees WHERE salary > 30000');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

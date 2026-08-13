@@ -1,0 +1,66 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to find how many camera lenses have a focal length longer than 15 mm
+router.get('/camera-lenses/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM camera_lenses WHERE focal_length_mm > 15');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the brand and name for each camera lens, sorted by maximum aperture in descending order
+router.get('/camera-lenses', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT brand, name FROM camera_lenses ORDER BY max_aperture DESC');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to list the id, color scheme, and name for all the photos
+router.get('/photos', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id, color_scheme, name FROM photos');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the maximum and average height of the mountains
+router.get('/mountains/heights', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                MAX(height_meters) AS max_height,
+                AVG(height_meters) AS avg_height
+            FROM mountains
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the average prominence of the mountains in country 'Morocco'
+router.get('/mountains/prominence', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                AVG(prominence) AS avg_prominence
+            FROM mountains
+            WHERE country = 'Morocco'
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

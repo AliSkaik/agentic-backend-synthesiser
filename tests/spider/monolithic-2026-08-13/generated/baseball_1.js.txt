@@ -1,0 +1,55 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to find the college with the largest number of baseball players
+router.get('/college-with-most-players', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT c.id, c.full_name, COUNT(p.id) AS player_count
+            FROM colleges c
+            JOIN teams t ON c.id = t.college_id
+            JOIN players p ON t.id = p.team_id
+            GROUP BY c.id, c.full_name
+            ORDER BY player_count DESC
+            LIMIT 1;
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the average salary of players in a specific team
+router.get('/average-salary/:teamName', async (req, res) => {
+    const { teamName } = req.params;
+    try {
+        const result = await pool.query(`
+            SELECT AVG(p.salary) AS avg_salary
+            FROM teams t
+            JOIN players p ON t.id = p.team_id
+            WHERE t.name = $1;
+        `, [teamName]);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to find the first and last names of players participating in all-star game in 1998
+router.get('/all-star-players/1998', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT p.first_name, p.last_name
+            FROM players p
+            JOIN all_star_games ag ON p.id = ag.player_id
+            WHERE ag.year = 1998;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

@@ -1,0 +1,97 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE entrepreneurs (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE companies (
+    id SERIAL PRIMARY KEY,
+    entrepreneur_id INT REFERENCES entrepreneurs(id),
+    name VARCHAR(255) NOT NULL,
+    money_requested NUMERIC(10, 2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE investors (
+    id SERIAL PRIMARY KEY,
+    company_id INT REFERENCES companies(id),
+    investor_name VARCHAR(255) NOT NULL,
+    investment_amount NUMERIC(10, 2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Get the total number of entrepreneurs
+router.get('/entrepreneurs/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM entrepreneurs');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// List the companies of entrepreneurs in descending order of money requested
+router.get('/entrepreneurs/companies', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT c.id, c.name, c.money_requested, e.name AS entrepreneur_name
+            FROM companies c
+            JOIN entrepreneurs e ON c.entrepreneur_id = e.id
+            ORDER BY c.money_requested DESC;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// List the companies and the investors of entrepreneurs
+router.get('/entrepreneurs/companies-investors', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                c.id AS company_id,
+                c.name AS company_name,
+                c.money_requested,
+                e.name AS entrepreneur_name,
+                i.investor_name,
+                i.investment_amount
+            FROM companies c
+            JOIN entrepreneurs e ON c.entrepreneur_id = e.id
+            LEFT JOIN investors i ON c.id = i.company_id;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - `entrepreneurs`: Stores information about entrepreneurs.
+   - `companies`: Stores information about companies, linked to an entrepreneur.
+   - `investors`: Stores information about investors, linked to a company.
+
+2. **Express Router**:
+   - `/entrepreneurs/count`: Returns the total number of entrepreneurs.
+   - `/entrepreneurs/companies`: Lists all companies with their details and the entrepreneur's name, ordered by money requested in descending order.
+   - `/entrepreneurs/companies-investors`: Lists all companies along with their investors' names and investment amounts.
+
+This setup ensures that you can efficiently query the database for the required information using REST endpoints.

@@ -1,0 +1,75 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE aircrafts (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    distance INTEGER NOT NULL
+);
+```
+
+### Express Router (ES Module)
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Endpoint to get the number of aircrafts in the database
+router.get('/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM aircrafts');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get all aircrafts with their names and distances
+router.get('/all', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id, name, distance FROM aircrafts');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get all airplanes with their names and distances
+router.get('/airplanes', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id, name, distance FROM aircrafts WHERE name LIKE \'%Airplane%\'');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Endpoint to get aircrafts with more than 1000 distance
+router.get('/long-distance', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id FROM aircrafts WHERE distance > 1000');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - The `aircrafts` table has three columns: `id`, `name`, and `distance`.
+   - `id` is a primary key with auto-increment.
+   - `name` and `distance` are required fields.
+
+2. **Express Router**:
+   - `/count`: Returns the total number of aircrafts in the database.
+   - `/all`: Returns all aircrafts with their IDs, names, and distances.
+   - `/airplanes`: Returns all aircrafts that have "Airplane" in their name.
+   - `/long-distance`: Returns the IDs of all aircrafts with a distance greater than 1000.
+
+Each endpoint uses `pool.query` to execute SQL queries against the PostgreSQL database. The results are then returned as JSON responses.

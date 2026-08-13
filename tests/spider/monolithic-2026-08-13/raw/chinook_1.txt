@@ -1,0 +1,83 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE genres (
+    genre_id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE
+);
+
+CREATE TABLE artists (
+    artist_id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE
+);
+
+CREATE TABLE albums (
+    album_id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    artist_id INT REFERENCES artists(artist_id),
+    genre_id INT REFERENCES genres(genre_id)
+);
+
+CREATE TABLE customers (
+    customer_id SERIAL PRIMARY KEY,
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL,
+    state CHAR(2) NOT NULL
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. How many albums are there?
+router.get('/albums/count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM albums');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. List the names of all music genres.
+router.get('/genres', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM genres');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. Find all the customer information in state NY.
+router.get('/customers/ny', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM customers WHERE state = $1', ['NY']);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Database Schema**:
+   - `genres`: Stores information about different music genres.
+   - `artists`: Stores information about artists.
+   - `albums`: Stores information about albums, linked to artists and genres.
+   - `customers`: Stores customer information.
+
+2. **Express Router**:
+   - `/albums/count`: Returns the total number of albums in the database.
+   - `/genres`: Returns a list of all music genres.
+   - `/customers/ny`: Returns all customers who are located in the state of New York (NY).
+
+This setup ensures that you can query the database for the required information using simple REST endpoints.

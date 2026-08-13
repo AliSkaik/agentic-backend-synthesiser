@@ -1,0 +1,80 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. How many heads of the departments are older than 56?
+router.get('/heads-older-than-56', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT COUNT(*)
+            FROM employees
+            WHERE department_id IN (
+                SELECT id
+                FROM departments
+                WHERE name = 'Head'
+            ) AND age > 56;
+        `);
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 2. List the name, born state and age of the heads of departments ordered by age.
+router.get('/heads-by-age', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT e.name, e.born_state, e.age
+            FROM employees e
+            JOIN departments d ON e.department_id = d.id
+            WHERE d.name = 'Head'
+            ORDER BY e.age;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 3. List the creation year, name and budget of each department.
+router.get('/departments', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT creation_year, name, budget
+            FROM departments;
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 4. What are the maximum and minimum budget of the departments?
+router.get('/budget-extremes', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT MAX(budget) AS max_budget, MIN(budget) AS min_budget
+            FROM departments;
+        `);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 5. What is the average number of employees of the departments whose rank is between 10 and 15?
+router.get('/average-employees', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT AVG(rank)
+            FROM employees
+            WHERE rank BETWEEN 10 AND 15;
+        `);
+        res.json({ average_rank: result.rows[0].avg });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+export default router;

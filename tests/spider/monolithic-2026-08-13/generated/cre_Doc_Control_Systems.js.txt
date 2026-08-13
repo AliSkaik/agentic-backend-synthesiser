@@ -1,0 +1,64 @@
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// Get all document status codes
+router.get('/document-status-codes', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT status_code FROM document_status');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get description of a specific document status code
+router.get('/document-status-code/:status_code', async (req, res) => {
+    const { status_code } = req.params;
+    try {
+        const result = await pool.query('SELECT description FROM document_status WHERE status_code = $1', [status_code]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Document status code not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get all document type codes
+router.get('/document-type-codes', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT type_code FROM document_type');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get description of a specific document type code
+router.get('/document-type-code/:type_code', async (req, res) => {
+    const { type_code } = req.params;
+    try {
+        const result = await pool.query('SELECT description FROM document_type WHERE type_code = $1', [type_code]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Document type code not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// Get all shipping agent names
+router.get('/shipping-agents', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM shipping_agent');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;

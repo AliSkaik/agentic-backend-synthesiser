@@ -1,0 +1,103 @@
+### PostgreSQL Schema
+
+```sql
+CREATE TABLE departments (
+    department_id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    location VARCHAR(100),
+    start_date DATE NOT NULL
+);
+
+CREATE TABLE employees (
+    employee_id SERIAL PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    department_id INT REFERENCES departments(department_id),
+    salary NUMERIC(10, 2)
+);
+
+CREATE TABLE dependents (
+    dependent_id SERIAL PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    employee_id INT REFERENCES employees(employee_id),
+    relation VARCHAR(50)
+);
+```
+
+### Express Router
+
+```javascript
+import express from 'express';
+import pool from '../db.js';
+
+const router = express.Router();
+
+// 1. List all department names ordered by their starting date.
+router.get('/departments', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM departments ORDER BY start_date');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 2. Find all dependent names who have a spouse relation with some employee.
+router.get('/dependents/spouse', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT first_name, last_name FROM dependents WHERE relation = \'spouse\'');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 3. How many female dependents are there?
+router.get('/dependents/female-count', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM dependents WHERE relation = \'spouse\' AND first_name LIKE \'F%\'');
+        res.json({ count: result.rows[0].count });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 4. Find the names of departments that are located in Houston.
+router.get('/departments/houston', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM departments WHERE location = \'Houston\'');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// 5. Return the first names and last names of employees who earn more than 30000 in salary.
+router.get('/employees/salary', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT first_name, last_name FROM employees WHERE salary > 30000');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+export default router;
+```
+
+### Explanation
+
+1. **Departments Table**: Stores department details including a unique `department_id`, name, location, and start date.
+2. **Employees Table**: Stores employee details including a unique `employee_id`, first name, last name, department ID (foreign key), and salary.
+3. **Dependents Table**: Stores dependent details including a unique `dependent_id`, first name, last name, employee ID (foreign key), and relation.
+
+### Express Router Endpoints
+
+- `/departments`: Returns all department names ordered by their starting date.
+- `/dependents/spouse`: Returns the names of dependents who have a 'spouse' relationship with an employee.
+- `/dependents/female-count`: Returns the count of female dependents (assuming first name starts with 'F').
+- `/departments/houston`: Returns the names of departments located in Houston.
+- `/employees/salary`: Returns the first and last names of employees who earn more than 30,000.
+
+Each endpoint uses `pool.query` to execute SQL queries against the PostgreSQL database.
