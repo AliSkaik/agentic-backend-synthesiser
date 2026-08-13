@@ -2052,3 +2052,40 @@ to publish than to interrogate. It was traced to the splitter only because the
 number was implausible against the previous day's evidence. The same trap is
 visible in advance here, so the alternative is chosen before the numbers exist
 rather than after they turn out to be flattering.
+
+### Correction to the Scenario B design, before it runs
+
+The table above lists "schema precision and recall" as measured in Scenario B.
+**It cannot be.** Precision and recall are computed against a gold standard, and
+Scenario B uses two feature descriptions with no gold schema attached — Spider
+supplies gold, these fixtures do not. Listing it was an error, made by copying
+the row set from Scenario A.
+
+Scenario B measures verdicts, iterations to convergence, latency, token
+consumption, and the symmetric extraction measure. **Schema correctness is
+Scenario A's metric and only Scenario A's.** Corrected here rather than
+discovered at write-up.
+
+The descriptions are the two committed in
+`tests/fixtures/runs/2026-08-11-layer0-live/probe.json` as `c1-blog` and
+`c2-orders`:
+
+- *"A blog with users, posts and tags. Posts belong to a user and can have many
+  tags."*
+- *"An online shop with customers, orders and the line items on each order."*
+
+They are used because they are already in version control with their outputs, not
+because they produced the Week 8 fixtures — the descriptions behind those were
+never recorded, which is itself a reproducibility gap worth naming.
+
+**One consequence worth stating in advance.** On `c1-blog` Agent 1 emitted
+`CREATE TYPE tag_name AS VARCHAR(255)`, which fails Layer 0. Scenario B will
+therefore exercise the Agent 1 repair loop against the live model for the first
+time, and answer the question left open on 2026-08-11: whether Agent 1 can act on
+a Layer 0 critique. That was the original purpose of the paired probe and it has
+been outstanding since.
+
+Because generation is deterministic, attempt 1 inside the pipeline's transcripts
+is byte-identical to a standalone single-shot run. The like-for-like arm is
+therefore read out of the transcript rather than generated separately, which
+removes one full generation per fixture and is exact rather than approximate.
