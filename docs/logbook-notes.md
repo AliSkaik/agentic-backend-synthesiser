@@ -1864,3 +1864,24 @@ unbalanced parentheses. `ScopeViolation` is the exception — it is detected at
 statement level before any body is entered, so it does identify its cause. Any
 table of Layer 0 error types must say which of its rows describe causes and which
 describe the position at which the parser gave up.
+
+### Amendment, same sitting: the answered count is itself a denominator
+
+The rule above excludes instances the endpoint never answered, from both arms.
+That is consistent, but it moves the problem up one level: if the baseline arm
+accumulates several unanswered calls while the pipeline arm had none, the
+headline figures again run over different totals — 100 against 97 — and a reader
+comparing them would assume both were 100.
+
+**So the answered count is reported for each arm immediately beside its headline,
+not derived and not deferred to a table further down.** A comparison reads:
+
+> pipeline: recall 31.0% (answered 100/100)
+> baseline: recall 24.0% (answered 97/100, 3 unanswered)
+
+This is the same disclosure the precision and recall denominators already get.
+Any figure whose denominator differs between arms must carry that denominator
+wherever the figure appears, because the alternative is a reader silently
+assuming they match.
+
+Recorded while the baseline run is still executing and no aggregate exists.
