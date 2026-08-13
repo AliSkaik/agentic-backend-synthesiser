@@ -2089,3 +2089,55 @@ Because generation is deterministic, attempt 1 inside the pipeline's transcripts
 is byte-identical to a standalone single-shot run. The like-for-like arm is
 therefore read out of the transcript rather than generated separately, which
 removes one full generation per fixture and is exact rather than approximate.
+
+## Week 9 — 2026-08-13 — a 300-second ceiling that was never the configured one
+
+**Defect, with its blast radius.** `DEFAULT_TIMEOUT_MS` is 600 000 ms and was
+never in effect. Undici's `bodyTimeout` defaults to 300 000 ms and measures the
+gap between chunks; with `stream: false` Ollama sends nothing at all until
+generation completes, so every generation longer than five minutes had its
+connection closed and surfaced as `TypeError: fetch failed`.
+
+Two failures, measured:
+
+| where | latency | error |
+| --- | --- | --- |
+| `academic`, baseline arm | 306 279 ms | `TypeError` |
+| `orders`, Agent 2 attempt 2 | 306 791 ms | `TypeError` |
+
+**512 ms apart.** That is a ceiling, not a flake, and it explains three earlier
+observations that were recorded as separate incidents: `academic` failing three
+times on three attempts, the "reproducible, length-related" note attached to it,
+and the Scenario B orders arm terminating as `infrastructure`.
+
+**Consequences that must be carried forward.** The orders arm of Scenario B is
+not a measurement — the pipeline never received its second Agent 2 attempt, so
+its `infrastructure` outcome says nothing about repair. It is being re-run.
+Anything else that took longer than ~306 s during Scenario A was truncated the
+same way, and the true rate is unknown because a killed connection leaves no
+partial output to count.
+
+### The fix, and what was verified rather than assumed
+
+The request now streams. Streaming resets the inter-chunk timer on every token,
+so the ceiling disappears without adding a dependency.
+
+Transport is the only thing that changed — same model, prompt, options and seed —
+and that was checked rather than argued. One generation issued both ways:
+
+| | chars | sha256 (first 16) | tokens |
+| --- | --- | --- | --- |
+| streaming | 672 | `d74292dc79c1c697` | 47 / 153 |
+| non-streaming | 672 | `d74292dc79c1c697` | 47 / 153 |
+
+**Byte-identical, and the token counts agree.** The determinism property every
+figure in this project rests on is preserved.
+
+### The change is mid-experiment and that has to be stated
+
+Scenario A ran entirely under the ceiling. Scenario B's blog arm did too. The
+orders re-run does not. **Anywhere latency from before and after is compared,
+the difference must be named**, because a run that could be killed at 306 s and
+one that cannot are not measuring the same distribution — the earlier figures are
+censored at the top end, and censored in a way that removes the slowest cases
+rather than a random sample of them.
