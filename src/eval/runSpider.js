@@ -13,7 +13,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { synthesiseSchema } from "../agents/schemaSynthesiser.js";
 import { verifyGrammar } from "../agents/grammarVerifier.js";
 import { parseSchema } from "../agents/relationalValidator.js";
-import { readGeneratedSchema, goldSchema, scoreInstance } from "./schemaScorer.js";
+import { readGeneratedSchema, goldSchema, scoreInstance, aggregateScores } from "./schemaScorer.js";
 
 const ROOT = new URL("../../", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 
@@ -71,6 +71,7 @@ for (const [index, item] of descriptions.slice(0, limit).entries()) {
     fallbackDescription: item.fallback,
     reused,
     latencyMs,
+    responded: ddl !== null,
     chars: ddl?.length ?? null,
     error,
     gold: { tables: gold.tables.size, foreignKeys: gold.foreignKeys.length },
@@ -118,27 +119,7 @@ for (const [index, item] of descriptions.slice(0, limit).entries()) {
 // Aggregates — specification item 7: macro is the headline, micro alongside
 // ---------------------------------------------------------------------------
 
-function aggregate(matching) {
-  const scored = results.filter((r) => r[matching]);
-  const macro = {};
-  const micro = {};
-  for (const facet of ["tables", "columns", "foreignKeys"]) {
-    for (const measure of ["precision", "recall"]) {
-      const values = scored.map((r) => r[matching][facet][measure]).filter((v) => v !== null);
-      macro[`${facet}.${measure}`] = values.length
-        ? values.reduce((a, b) => a + b, 0) / values.length
-        : null;
-    }
-    const matched = scored.reduce((a, r) => a + r[matching][facet].matched, 0);
-    const generated = scored.reduce((a, r) => a + r[matching][facet].generated, 0);
-    const gold = scored.reduce((a, r) => a + r[matching][facet].gold, 0);
-    micro[`${facet}.precision`] = generated ? matched / generated : null;
-    micro[`${facet}.recall`] = gold ? matched / gold : null;
-  }
-  const typeMatched = scored.reduce((a, r) => a + r[matching].types.matched, 0);
-  const typeCorrect = scored.reduce((a, r) => a + r[matching].types.correct, 0);
-  return { macro, micro, typeAccuracyMicro: typeMatched ? typeCorrect / typeMatched : null };
-}
+const aggregate = (matching) => aggregateScores(results, matching);
 
 const summary = {
   model: "qwen2.5-coder:7b",

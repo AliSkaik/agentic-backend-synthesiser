@@ -3,9 +3,12 @@
     "model": "qwen2.5-coder:7b",
     "temperature": 0,
     "seed": 42,
-    "ranAt": "2026-08-12T06:10:12.674Z",
+    "ranAt": "2026-08-13T00:51:19.906Z",
     "instances": 100,
-    "wallClockMs": 3172242,
+    "generated": 0,
+    "reused": 100,
+    "wallClockMs": 98,
+    "meanLatencyMs": null,
     "emptyOutput": 0,
     "producedNoSchema": 0,
     "fallbackDescriptions": [
@@ -14,7 +17,7 @@
       "imdb"
     ],
     "layer0": {
-      "extendedAccepted": 35,
+      "extendedAccepted": 45,
       "publishedAccepted": 0
     },
     "readerDisagreements": 0,
@@ -35,6 +38,9 @@
         "foreignKeys.precision": 0.030927835051546393,
         "foreignKeys.recall": 0.01107011070110701
       },
+      "scored": 100,
+      "unusable": 0,
+      "noResponse": 0,
       "typeAccuracyMicro": 0.936
     },
     "normalised": {
@@ -54,23 +60,19 @@
         "foreignKeys.precision": 0.05154639175257732,
         "foreignKeys.recall": 0.01845018450184502
       },
+      "scored": 100,
+      "unusable": 0,
+      "noResponse": 0,
       "typeAccuracyMicro": 0.9297520661157025
-    },
-    "layer0Rescored": {
-      "extendedAccepted": 45,
-      "publishedAccepted": 0,
-      "failuresByType": {
-        "ScopeViolation": 53,
-        "UnclosedParenthesis": 2
-      },
-      "note": "Re-evaluated over the same committed schemas after the grammar extension and the ScopeViolation classification. No schema regenerated."
     }
   },
   "results": [
     {
       "db_id": "academic",
       "fallbackDescription": true,
-      "latencyMs": 50980,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1551,
       "error": null,
       "gold": {
@@ -145,22 +147,14 @@
           "accuracy": null
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "activity_1",
       "fallbackDescription": false,
-      "latencyMs": 13157,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 410,
       "error": null,
       "gold": {
@@ -170,7 +164,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 8
         },
         "published": {
@@ -237,24 +231,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 8
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "aircraft",
       "fallbackDescription": false,
-      "latencyMs": 29963,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 994,
       "error": null,
       "gold": {
@@ -264,7 +248,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 21
         },
         "published": {
@@ -331,24 +315,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 21
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "allergy_1",
       "fallbackDescription": false,
-      "latencyMs": 15877,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 490,
       "error": null,
       "gold": {
@@ -423,22 +397,14 @@
           "accuracy": null
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "apartment_rentals",
       "fallbackDescription": false,
-      "latencyMs": 21516,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 715,
       "error": null,
       "gold": {
@@ -513,22 +479,14 @@
           "accuracy": 0.5
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "architecture",
       "fallbackDescription": false,
-      "latencyMs": 45419,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1268,
       "error": null,
       "gold": {
@@ -538,7 +496,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 34
         },
         "published": {
@@ -605,24 +563,14 @@
           "accuracy": 0.9
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 34
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "assets_maintenance",
       "fallbackDescription": false,
-      "latencyMs": 79133,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 2553,
       "error": null,
       "gold": {
@@ -632,8 +580,8 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 11
+          "type": "ScopeViolation",
+          "line": 49
         },
         "published": {
           "passed": false,
@@ -699,24 +647,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 49
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "baseball_1",
       "fallbackDescription": false,
-      "latencyMs": 69758,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1891,
       "error": null,
       "gold": {
@@ -725,14 +663,12 @@
       },
       "layer0": {
         "extended": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 52
+          "passed": true
         },
         "published": {
           "passed": false,
           "type": "UnexpectedToken",
-          "line": 52
+          "line": 1
         }
       },
       "exact": {
@@ -793,22 +729,14 @@
           "accuracy": 0.6666666666666666
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "battle_death",
       "fallbackDescription": false,
-      "latencyMs": 37953,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1085,
       "error": null,
       "gold": {
@@ -818,7 +746,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 25
         },
         "published": {
@@ -885,24 +813,14 @@
           "accuracy": 0.6666666666666666
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 25
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "behavior_monitoring",
       "fallbackDescription": false,
-      "latencyMs": 27296,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 891,
       "error": null,
       "gold": {
@@ -977,22 +895,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "bike_1",
       "fallbackDescription": false,
-      "latencyMs": 18160,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 466,
       "error": null,
       "gold": {
@@ -1067,22 +977,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "body_builder",
       "fallbackDescription": false,
-      "latencyMs": 19073,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 555,
       "error": null,
       "gold": {
@@ -1092,13 +994,13 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
-          "line": 15
+          "type": "UnclosedParenthesis",
+          "line": 6
         },
         "published": {
           "passed": false,
-          "type": "UnexpectedToken",
-          "line": 15
+          "type": "UnclosedParenthesis",
+          "line": 1
         }
       },
       "exact": {
@@ -1159,24 +1061,14 @@
           "accuracy": null
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 6
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "book_2",
       "fallbackDescription": false,
-      "latencyMs": 28094,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 842,
       "error": null,
       "gold": {
@@ -1186,7 +1078,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 14
         },
         "published": {
@@ -1253,24 +1145,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 14
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "browser_web",
       "fallbackDescription": false,
-      "latencyMs": 31370,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 827,
       "error": null,
       "gold": {
@@ -1280,7 +1162,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 8
         },
         "published": {
@@ -1347,24 +1229,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 8
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "candidate_poll",
       "fallbackDescription": false,
-      "latencyMs": 34368,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1011,
       "error": null,
       "gold": {
@@ -1439,22 +1311,14 @@
           "accuracy": null
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "car_1",
       "fallbackDescription": false,
-      "latencyMs": 35949,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1053,
       "error": null,
       "gold": {
@@ -1464,7 +1328,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 13
         },
         "published": {
@@ -1531,24 +1395,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 13
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "chinook_1",
       "fallbackDescription": false,
-      "latencyMs": 49428,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1422,
       "error": null,
       "gold": {
@@ -1623,22 +1477,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "cinema",
       "fallbackDescription": false,
-      "latencyMs": 37108,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1091,
       "error": null,
       "gold": {
@@ -1648,7 +1494,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 15
         },
         "published": {
@@ -1715,24 +1561,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 15
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "city_record",
       "fallbackDescription": false,
-      "latencyMs": 22831,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 697,
       "error": null,
       "gold": {
@@ -1807,22 +1643,14 @@
           "accuracy": null
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "climbing",
       "fallbackDescription": false,
-      "latencyMs": 11709,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 297,
       "error": null,
       "gold": {
@@ -1831,14 +1659,12 @@
       },
       "layer0": {
         "extended": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 8
+          "passed": true
         },
         "published": {
           "passed": false,
-          "type": "UnexpectedToken",
-          "line": 8
+          "type": "UnclosedParenthesis",
+          "line": 1
         }
       },
       "exact": {
@@ -1899,22 +1725,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "club_1",
       "fallbackDescription": false,
-      "latencyMs": 13311,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 396,
       "error": null,
       "gold": {
@@ -1989,22 +1807,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "coffee_shop",
       "fallbackDescription": false,
-      "latencyMs": 37586,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1161,
       "error": null,
       "gold": {
@@ -2014,7 +1824,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 18
         },
         "published": {
@@ -2081,24 +1891,14 @@
           "accuracy": 0.75
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 18
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "college_1",
       "fallbackDescription": false,
-      "latencyMs": 47190,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1401,
       "error": null,
       "gold": {
@@ -2108,7 +1908,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 25
         },
         "published": {
@@ -2175,24 +1975,14 @@
           "accuracy": null
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 25
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "college_2",
       "fallbackDescription": false,
-      "latencyMs": 59303,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1759,
       "error": null,
       "gold": {
@@ -2202,7 +1992,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 32
         },
         "published": {
@@ -2269,24 +2059,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 32
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "college_3",
       "fallbackDescription": false,
-      "latencyMs": 14855,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 427,
       "error": null,
       "gold": {
@@ -2296,7 +2076,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 8
         },
         "published": {
@@ -2363,24 +2143,14 @@
           "accuracy": null
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 8
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "company_1",
       "fallbackDescription": false,
-      "latencyMs": 26218,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 774,
       "error": null,
       "gold": {
@@ -2455,22 +2225,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "company_employee",
       "fallbackDescription": false,
-      "latencyMs": 27772,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 879,
       "error": null,
       "gold": {
@@ -2480,7 +2242,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 12
         },
         "published": {
@@ -2547,24 +2309,14 @@
           "accuracy": 0.75
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 12
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "company_office",
       "fallbackDescription": false,
-      "latencyMs": 16193,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 474,
       "error": null,
       "gold": {
@@ -2574,7 +2326,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 9
         },
         "published": {
@@ -2641,24 +2393,14 @@
           "accuracy": null
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 9
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "concert_singer",
       "fallbackDescription": false,
-      "latencyMs": 31803,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 885,
       "error": null,
       "gold": {
@@ -2668,7 +2410,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 9
         },
         "published": {
@@ -2735,24 +2477,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 9
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "county_public_safety",
       "fallbackDescription": false,
-      "latencyMs": 42251,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1296,
       "error": null,
       "gold": {
@@ -2762,7 +2494,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 20
         },
         "published": {
@@ -2829,24 +2561,14 @@
           "accuracy": null
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 20
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "course_teach",
       "fallbackDescription": false,
-      "latencyMs": 6898,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 141,
       "error": null,
       "gold": {
@@ -2921,22 +2643,14 @@
           "accuracy": 0.75
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "cre_Doc_Control_Systems",
       "fallbackDescription": false,
-      "latencyMs": 24621,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 741,
       "error": null,
       "gold": {
@@ -3011,22 +2725,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "cre_Doc_Template_Mgt",
       "fallbackDescription": false,
-      "latencyMs": 13897,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 434,
       "error": null,
       "gold": {
@@ -3101,22 +2807,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "cre_Doc_Tracking_DB",
       "fallbackDescription": false,
-      "latencyMs": 9485,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 252,
       "error": null,
       "gold": {
@@ -3191,22 +2889,14 @@
           "accuracy": null
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "cre_Docs_and_Epenses",
       "fallbackDescription": false,
-      "latencyMs": 10327,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 284,
       "error": null,
       "gold": {
@@ -3281,22 +2971,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "cre_Drama_Workshop_Groups",
       "fallbackDescription": false,
-      "latencyMs": 14971,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 458,
       "error": null,
       "gold": {
@@ -3371,22 +3053,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "cre_Theme_park",
       "fallbackDescription": false,
-      "latencyMs": 13689,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 402,
       "error": null,
       "gold": {
@@ -3396,7 +3070,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 9
         },
         "published": {
@@ -3463,24 +3137,14 @@
           "accuracy": 0.5
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 9
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "csu_1",
       "fallbackDescription": false,
-      "latencyMs": 28400,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 663,
       "error": null,
       "gold": {
@@ -3490,7 +3154,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 18
         },
         "published": {
@@ -3557,24 +3221,14 @@
           "accuracy": null
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 18
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "culture_company",
       "fallbackDescription": false,
-      "latencyMs": 24480,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 708,
       "error": null,
       "gold": {
@@ -3649,22 +3303,14 @@
           "accuracy": null
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "customer_complaints",
       "fallbackDescription": false,
-      "latencyMs": 16170,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 466,
       "error": null,
       "gold": {
@@ -3739,22 +3385,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "customer_deliveries",
       "fallbackDescription": false,
-      "latencyMs": 27561,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 822,
       "error": null,
       "gold": {
@@ -3829,22 +3467,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "customers_and_addresses",
       "fallbackDescription": false,
-      "latencyMs": 26318,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 760,
       "error": null,
       "gold": {
@@ -3919,22 +3549,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "customers_and_invoices",
       "fallbackDescription": false,
-      "latencyMs": 19263,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 568,
       "error": null,
       "gold": {
@@ -3944,7 +3566,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 17
         },
         "published": {
@@ -4011,24 +3633,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 17
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "customers_and_products_contacts",
       "fallbackDescription": false,
-      "latencyMs": 45037,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1414,
       "error": null,
       "gold": {
@@ -4038,7 +3650,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 29
         },
         "published": {
@@ -4105,24 +3717,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 29
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "customers_campaigns_ecommerce",
       "fallbackDescription": false,
-      "latencyMs": 32166,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1045,
       "error": null,
       "gold": {
@@ -4132,7 +3734,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 21
         },
         "published": {
@@ -4199,24 +3801,14 @@
           "accuracy": null
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 21
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "customers_card_transactions",
       "fallbackDescription": false,
-      "latencyMs": 32681,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1046,
       "error": null,
       "gold": {
@@ -4226,7 +3818,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 24
         },
         "published": {
@@ -4293,24 +3885,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 24
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "debate",
       "fallbackDescription": false,
-      "latencyMs": 19262,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 533,
       "error": null,
       "gold": {
@@ -4385,22 +3967,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "decoration_competition",
       "fallbackDescription": false,
-      "latencyMs": 21752,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 675,
       "error": null,
       "gold": {
@@ -4410,7 +3984,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 8
         },
         "published": {
@@ -4477,24 +4051,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 8
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "department_management",
       "fallbackDescription": false,
-      "latencyMs": 28950,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 843,
       "error": null,
       "gold": {
@@ -4569,22 +4133,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "department_store",
       "fallbackDescription": false,
-      "latencyMs": 29847,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 889,
       "error": null,
       "gold": {
@@ -4593,14 +4149,12 @@
       },
       "layer0": {
         "extended": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 29
+          "passed": true
         },
         "published": {
           "passed": false,
-          "type": "UnexpectedToken",
-          "line": 29
+          "type": "UnclosedParenthesis",
+          "line": 1
         }
       },
       "exact": {
@@ -4661,22 +4215,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "device",
       "fallbackDescription": false,
-      "latencyMs": 23212,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 699,
       "error": null,
       "gold": {
@@ -4685,14 +4231,12 @@
       },
       "layer0": {
         "extended": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 7
+          "passed": true
         },
         "published": {
           "passed": false,
-          "type": "UnexpectedToken",
-          "line": 7
+          "type": "UnclosedParenthesis",
+          "line": 1
         }
       },
       "exact": {
@@ -4753,22 +4297,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "document_management",
       "fallbackDescription": false,
-      "latencyMs": 53035,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1773,
       "error": null,
       "gold": {
@@ -4778,13 +4314,13 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
-          "line": 8
+          "type": "ScopeViolation",
+          "line": 15
         },
         "published": {
           "passed": false,
-          "type": "UnexpectedToken",
-          "line": 8
+          "type": "UnclosedParenthesis",
+          "line": 1
         }
       },
       "exact": {
@@ -4845,24 +4381,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 15
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "dog_kennels",
       "fallbackDescription": false,
-      "latencyMs": 80013,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 2345,
       "error": null,
       "gold": {
@@ -4872,7 +4398,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 44
         },
         "published": {
@@ -4939,24 +4465,14 @@
           "accuracy": 0.8461538461538461
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 44
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "dorm_1",
       "fallbackDescription": false,
-      "latencyMs": 34180,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 808,
       "error": null,
       "gold": {
@@ -4966,7 +4482,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 31
         },
         "published": {
@@ -5033,24 +4549,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 31
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "driving_school",
       "fallbackDescription": false,
-      "latencyMs": 12925,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 339,
       "error": null,
       "gold": {
@@ -5060,7 +4566,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 10
         },
         "published": {
@@ -5127,24 +4633,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 10
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "e_government",
       "fallbackDescription": false,
-      "latencyMs": 40648,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1232,
       "error": null,
       "gold": {
@@ -5219,22 +4715,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "e_learning",
       "fallbackDescription": false,
-      "latencyMs": 33364,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1017,
       "error": null,
       "gold": {
@@ -5244,7 +4732,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 26
         },
         "published": {
@@ -5311,24 +4799,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 26
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "election",
       "fallbackDescription": false,
-      "latencyMs": 13087,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 423,
       "error": null,
       "gold": {
@@ -5338,7 +4816,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 8
         },
         "published": {
@@ -5405,24 +4883,14 @@
           "accuracy": null
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 8
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "election_representative",
       "fallbackDescription": false,
-      "latencyMs": 28543,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 985,
       "error": null,
       "gold": {
@@ -5432,7 +4900,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 20
         },
         "published": {
@@ -5499,24 +4967,14 @@
           "accuracy": 0.6666666666666666
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 20
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "employee_hire_evaluation",
       "fallbackDescription": false,
-      "latencyMs": 15629,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 451,
       "error": null,
       "gold": {
@@ -5591,22 +5049,14 @@
           "accuracy": null
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "entertainment_awards",
       "fallbackDescription": false,
-      "latencyMs": 36096,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1134,
       "error": null,
       "gold": {
@@ -5616,7 +5066,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 24
         },
         "published": {
@@ -5683,24 +5133,14 @@
           "accuracy": 0.5
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 24
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "entrepreneur",
       "fallbackDescription": false,
-      "latencyMs": 22454,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 693,
       "error": null,
       "gold": {
@@ -5775,22 +5215,14 @@
           "accuracy": null
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "epinions_1",
       "fallbackDescription": false,
-      "latencyMs": 19175,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 585,
       "error": null,
       "gold": {
@@ -5865,22 +5297,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "farm",
       "fallbackDescription": false,
-      "latencyMs": 19897,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 556,
       "error": null,
       "gold": {
@@ -5955,22 +5379,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "film_rank",
       "fallbackDescription": false,
-      "latencyMs": 15363,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 423,
       "error": null,
       "gold": {
@@ -5980,7 +5396,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 9
         },
         "published": {
@@ -6047,24 +5463,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 9
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "flight_1",
       "fallbackDescription": false,
-      "latencyMs": 14659,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 409,
       "error": null,
       "gold": {
@@ -6074,7 +5480,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 8
         },
         "published": {
@@ -6141,24 +5547,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 8
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "flight_2",
       "fallbackDescription": false,
-      "latencyMs": 31001,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 947,
       "error": null,
       "gold": {
@@ -6168,7 +5564,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 20
         },
         "published": {
@@ -6235,24 +5631,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 20
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "flight_4",
       "fallbackDescription": false,
-      "latencyMs": 22459,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 646,
       "error": null,
       "gold": {
@@ -6327,22 +5713,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "flight_company",
       "fallbackDescription": false,
-      "latencyMs": 63435,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1872,
       "error": null,
       "gold": {
@@ -6352,7 +5730,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 40
         },
         "published": {
@@ -6419,24 +5797,14 @@
           "accuracy": 0.8333333333333334
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 40
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "formula_1",
       "fallbackDescription": false,
-      "latencyMs": 19840,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 540,
       "error": null,
       "gold": {
@@ -6445,14 +5813,12 @@
       },
       "layer0": {
         "extended": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 7
+          "passed": true
         },
         "published": {
           "passed": false,
-          "type": "UnexpectedToken",
-          "line": 7
+          "type": "UnclosedParenthesis",
+          "line": 1
         }
       },
       "exact": {
@@ -6513,22 +5879,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "game_1",
       "fallbackDescription": false,
-      "latencyMs": 18806,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 521,
       "error": null,
       "gold": {
@@ -6603,22 +5961,14 @@
           "accuracy": null
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "game_injury",
       "fallbackDescription": false,
-      "latencyMs": 77222,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 2104,
       "error": null,
       "gold": {
@@ -6628,7 +5978,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 44
         },
         "published": {
@@ -6695,24 +6045,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 44
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "gas_company",
       "fallbackDescription": false,
-      "latencyMs": 41649,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1244,
       "error": null,
       "gold": {
@@ -6722,7 +6062,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 15
         },
         "published": {
@@ -6789,24 +6129,14 @@
           "accuracy": null
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 15
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "geo",
       "fallbackDescription": true,
-      "latencyMs": 17397,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 495,
       "error": null,
       "gold": {
@@ -6881,22 +6211,14 @@
           "accuracy": null
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "gymnast",
       "fallbackDescription": false,
-      "latencyMs": 48806,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1341,
       "error": null,
       "gold": {
@@ -6906,13 +6228,13 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
-          "line": 18
+          "type": "UnclosedParenthesis",
+          "line": 8
         },
         "published": {
           "passed": false,
-          "type": "UnexpectedToken",
-          "line": 18
+          "type": "UnclosedParenthesis",
+          "line": 1
         }
       },
       "exact": {
@@ -6973,24 +6295,14 @@
           "accuracy": null
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 8
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "hospital_1",
       "fallbackDescription": false,
-      "latencyMs": 53713,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1685,
       "error": null,
       "gold": {
@@ -7000,7 +6312,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 16
         },
         "published": {
@@ -7067,24 +6379,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 16
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "hr_1",
       "fallbackDescription": false,
-      "latencyMs": 13113,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 320,
       "error": null,
       "gold": {
@@ -7159,22 +6461,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "icfp_1",
       "fallbackDescription": false,
-      "latencyMs": 27698,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 933,
       "error": null,
       "gold": {
@@ -7249,22 +6543,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "imdb",
       "fallbackDescription": true,
-      "latencyMs": 38627,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1081,
       "error": null,
       "gold": {
@@ -7339,22 +6625,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "inn_1",
       "fallbackDescription": false,
-      "latencyMs": 44065,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1169,
       "error": null,
       "gold": {
@@ -7364,7 +6642,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 20
         },
         "published": {
@@ -7431,24 +6709,14 @@
           "accuracy": 0.5
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 20
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "insurance_and_eClaims",
       "fallbackDescription": false,
-      "latencyMs": 45344,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1459,
       "error": null,
       "gold": {
@@ -7457,14 +6725,12 @@
       },
       "layer0": {
         "extended": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 17
+          "passed": true
         },
         "published": {
           "passed": false,
           "type": "UnexpectedToken",
-          "line": 17
+          "line": 1
         }
       },
       "exact": {
@@ -7525,22 +6791,14 @@
           "accuracy": 0.75
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "insurance_fnol",
       "fallbackDescription": false,
-      "latencyMs": 31634,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 995,
       "error": null,
       "gold": {
@@ -7550,7 +6808,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 21
         },
         "published": {
@@ -7617,24 +6875,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 21
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "insurance_policies",
       "fallbackDescription": false,
-      "latencyMs": 64972,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1845,
       "error": null,
       "gold": {
@@ -7644,7 +6892,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 35
         },
         "published": {
@@ -7711,24 +6959,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 35
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "journal_committee",
       "fallbackDescription": false,
-      "latencyMs": 21583,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 564,
       "error": null,
       "gold": {
@@ -7738,7 +6976,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 8
         },
         "published": {
@@ -7805,24 +7043,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 8
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "loan_1",
       "fallbackDescription": false,
-      "latencyMs": 32108,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1024,
       "error": null,
       "gold": {
@@ -7832,7 +7060,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 21
         },
         "published": {
@@ -7899,24 +7127,14 @@
           "accuracy": null
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 21
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "local_govt_and_lot",
       "fallbackDescription": false,
-      "latencyMs": 64460,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 2071,
       "error": null,
       "gold": {
@@ -7926,7 +7144,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 35
         },
         "published": {
@@ -7993,24 +7211,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 35
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "local_govt_in_alabama",
       "fallbackDescription": false,
-      "latencyMs": 67582,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 2146,
       "error": null,
       "gold": {
@@ -8020,7 +7228,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 29
         },
         "published": {
@@ -8087,24 +7295,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 29
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "local_govt_mdm",
       "fallbackDescription": false,
-      "latencyMs": 35002,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1071,
       "error": null,
       "gold": {
@@ -8179,22 +7377,14 @@
           "accuracy": null
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "machine_repair",
       "fallbackDescription": false,
-      "latencyMs": 12522,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 353,
       "error": null,
       "gold": {
@@ -8204,7 +7394,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 10
         },
         "published": {
@@ -8271,24 +7461,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 10
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "manufactory_1",
       "fallbackDescription": false,
-      "latencyMs": 48597,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1307,
       "error": null,
       "gold": {
@@ -8298,7 +7478,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 20
         },
         "published": {
@@ -8365,24 +7545,14 @@
           "accuracy": null
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 20
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "manufacturer",
       "fallbackDescription": false,
-      "latencyMs": 48851,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1504,
       "error": null,
       "gold": {
@@ -8391,14 +7561,12 @@
       },
       "layer0": {
         "extended": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 20
+          "passed": true
         },
         "published": {
           "passed": false,
-          "type": "UnexpectedToken",
-          "line": 20
+          "type": "UnclosedParenthesis",
+          "line": 1
         }
       },
       "exact": {
@@ -8459,22 +7627,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "match_season",
       "fallbackDescription": false,
-      "latencyMs": 30827,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 995,
       "error": null,
       "gold": {
@@ -8482,77 +7642,6 @@
         "foreignKeys": 3
       },
       "layer0": {
-        "extended": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 22
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      },
-      "exact": {
-        "empty": false,
-        "tables": {
-          "gold": 4,
-          "generated": 3,
-          "matched": 1,
-          "precision": 0.3333333333333333,
-          "recall": 0.25
-        },
-        "columns": {
-          "gold": 21,
-          "generated": 8,
-          "matched": 2,
-          "precision": 0.25,
-          "recall": 0.09523809523809523
-        },
-        "foreignKeys": {
-          "gold": 3,
-          "generated": 2,
-          "matched": 0,
-          "precision": 0,
-          "recall": 0
-        },
-        "types": {
-          "matched": 2,
-          "correct": 2,
-          "accuracy": 1
-        }
-      },
-      "normalised": {
-        "empty": false,
-        "tables": {
-          "gold": 4,
-          "generated": 3,
-          "matched": 1,
-          "precision": 0.3333333333333333,
-          "recall": 0.25
-        },
-        "columns": {
-          "gold": 21,
-          "generated": 8,
-          "matched": 2,
-          "precision": 0.25,
-          "recall": 0.09523809523809523
-        },
-        "foreignKeys": {
-          "gold": 3,
-          "generated": 2,
-          "matched": 0,
-          "precision": 0,
-          "recall": 0
-        },
-        "types": {
-          "matched": 2,
-          "correct": 2,
-          "accuracy": 1
-        }
-      },
-      "readerDisagreement": false,
-      "layer0Rescored": {
         "extended": {
           "passed": false,
           "type": "ScopeViolation",
@@ -8563,12 +7652,73 @@
           "type": "UnclosedParenthesis",
           "line": 1
         }
-      }
+      },
+      "exact": {
+        "empty": false,
+        "tables": {
+          "gold": 4,
+          "generated": 3,
+          "matched": 1,
+          "precision": 0.3333333333333333,
+          "recall": 0.25
+        },
+        "columns": {
+          "gold": 21,
+          "generated": 8,
+          "matched": 2,
+          "precision": 0.25,
+          "recall": 0.09523809523809523
+        },
+        "foreignKeys": {
+          "gold": 3,
+          "generated": 2,
+          "matched": 0,
+          "precision": 0,
+          "recall": 0
+        },
+        "types": {
+          "matched": 2,
+          "correct": 2,
+          "accuracy": 1
+        }
+      },
+      "normalised": {
+        "empty": false,
+        "tables": {
+          "gold": 4,
+          "generated": 3,
+          "matched": 1,
+          "precision": 0.3333333333333333,
+          "recall": 0.25
+        },
+        "columns": {
+          "gold": 21,
+          "generated": 8,
+          "matched": 2,
+          "precision": 0.25,
+          "recall": 0.09523809523809523
+        },
+        "foreignKeys": {
+          "gold": 3,
+          "generated": 2,
+          "matched": 0,
+          "precision": 0,
+          "recall": 0
+        },
+        "types": {
+          "matched": 2,
+          "correct": 2,
+          "accuracy": 1
+        }
+      },
+      "readerDisagreement": false
     },
     {
       "db_id": "medicine_enzyme_interaction",
       "fallbackDescription": false,
-      "latencyMs": 19945,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 531,
       "error": null,
       "gold": {
@@ -8577,14 +7727,12 @@
       },
       "layer0": {
         "extended": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 10
+          "passed": true
         },
         "published": {
           "passed": false,
           "type": "UnexpectedToken",
-          "line": 10
+          "line": 1
         }
       },
       "exact": {
@@ -8645,22 +7793,14 @@
           "accuracy": null
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "mountain_photos",
       "fallbackDescription": false,
-      "latencyMs": 52429,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1522,
       "error": null,
       "gold": {
@@ -8670,7 +7810,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 32
         },
         "published": {
@@ -8737,24 +7877,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 32
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "movie_1",
       "fallbackDescription": false,
-      "latencyMs": 45618,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1352,
       "error": null,
       "gold": {
@@ -8764,7 +7894,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 13
         },
         "published": {
@@ -8831,24 +7961,14 @@
           "accuracy": null
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 13
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "museum_visit",
       "fallbackDescription": false,
-      "latencyMs": 43561,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 1306,
       "error": null,
       "gold": {
@@ -8858,7 +7978,7 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
+          "type": "ScopeViolation",
           "line": 20
         },
         "published": {
@@ -8925,24 +8045,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 20
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "music_1",
       "fallbackDescription": false,
-      "latencyMs": 27303,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 828,
       "error": null,
       "gold": {
@@ -8951,14 +8061,12 @@
       },
       "layer0": {
         "extended": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 23
+          "passed": true
         },
         "published": {
           "passed": false,
           "type": "UnexpectedToken",
-          "line": 23
+          "line": 1
         }
       },
       "exact": {
@@ -9019,22 +8127,14 @@
           "accuracy": null
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "music_2",
       "fallbackDescription": false,
-      "latencyMs": 25836,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 718,
       "error": null,
       "gold": {
@@ -9043,9 +8143,7 @@
       },
       "layer0": {
         "extended": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 13
+          "passed": true
         },
         "published": {
           "passed": false,
@@ -9111,22 +8209,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnexpectedToken",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "music_4",
       "fallbackDescription": false,
-      "latencyMs": 18915,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 552,
       "error": null,
       "gold": {
@@ -9136,13 +8226,13 @@
       "layer0": {
         "extended": {
           "passed": false,
-          "type": "UnexpectedToken",
-          "line": 8
+          "type": "ScopeViolation",
+          "line": 15
         },
         "published": {
           "passed": false,
-          "type": "UnexpectedToken",
-          "line": 8
+          "type": "UnclosedParenthesis",
+          "line": 1
         }
       },
       "exact": {
@@ -9203,24 +8293,14 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": false,
-          "type": "ScopeViolation",
-          "line": 15
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     },
     {
       "db_id": "musical",
       "fallbackDescription": false,
-      "latencyMs": 13435,
+      "reused": true,
+      "latencyMs": null,
+      "responded": true,
       "chars": 428,
       "error": null,
       "gold": {
@@ -9295,17 +8375,7 @@
           "accuracy": 1
         }
       },
-      "readerDisagreement": false,
-      "layer0Rescored": {
-        "extended": {
-          "passed": true
-        },
-        "published": {
-          "passed": false,
-          "type": "UnclosedParenthesis",
-          "line": 1
-        }
-      }
+      "readerDisagreement": false
     }
   ]
 }

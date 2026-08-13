@@ -186,6 +186,75 @@ export function goldSchema(entry) {
 }
 
 // ---------------------------------------------------------------------------
+// Aggregation — specification item 7, and what belongs in the denominator
+// ---------------------------------------------------------------------------
+
+/**
+ * Macro aggregate: per instance, then averaged unweighted.
+ *
+ * The denominator is the point of this function. An instance that answered but
+ * produced nothing the harness could use still counts against recall, because
+ * excluding it would report the average of the instances that happened to work
+ * and call that a reliability figure. Precision over zero generated elements is
+ * undefined, so those instances are excluded from precision only.
+ *
+ * An instance where the endpoint never answered is excluded from both. That is
+ * an infrastructure failure rather than a defect in the model's output, and the
+ * same rule keeps the reflection loop's convergence rate honest.
+ *
+ * @param {Array<{responded: boolean, [k: string]: any}>} records
+ * @param {"exact"|"normalised"} matching
+ */
+export function aggregateScores(records, matching) {
+  const answered = records.filter((r) => r.responded);
+  const scored = answered.filter((r) => r[matching]);
+  const unusable = answered.filter((r) => !r[matching]);
+
+  const macro = {};
+  for (const facet of ["tables", "columns", "foreignKeys"]) {
+    const precisions = scored.map((r) => r[matching][facet].precision).filter((v) => v !== null);
+    macro[`${facet}.precision`] = precisions.length
+      ? precisions.reduce((a, b) => a + b, 0) / precisions.length
+      : null;
+
+    // Every answered instance contributes a recall, and an unusable one
+    // contributes zero.
+    const recalls = scored
+      .map((r) => r[matching][facet].recall)
+      .filter((v) => v !== null)
+      .concat(unusable.map(() => 0));
+    macro[`${facet}.recall`] = recalls.length
+      ? recalls.reduce((a, b) => a + b, 0) / recalls.length
+      : null;
+  }
+
+  // Micro is pooled over instances that produced a schema. An unusable instance
+  // contributes no elements to pool, so it cannot be represented here the way it
+  // is in macro. That asymmetry is why macro is the pre-registered headline and
+  // micro is reported beside it rather than instead of it.
+  const micro = {};
+  for (const facet of ["tables", "columns", "foreignKeys"]) {
+    const matched = scored.reduce((a, r) => a + r[matching][facet].matched, 0);
+    const generated = scored.reduce((a, r) => a + r[matching][facet].generated, 0);
+    const gold = scored.reduce((a, r) => a + r[matching][facet].gold, 0);
+    micro[`${facet}.precision`] = generated ? matched / generated : null;
+    micro[`${facet}.recall`] = gold ? matched / gold : null;
+  }
+
+  const typeMatched = scored.reduce((a, r) => a + r[matching].types.matched, 0);
+  const typeCorrect = scored.reduce((a, r) => a + r[matching].types.correct, 0);
+
+  return {
+    macro,
+    micro,
+    scored: scored.length,
+    unusable: unusable.length,
+    noResponse: records.length - answered.length,
+    typeAccuracyMicro: typeMatched ? typeCorrect / typeMatched : null,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Matching — specification items 5 and 6
 // ---------------------------------------------------------------------------
 

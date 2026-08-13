@@ -12,7 +12,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { generateMonolithic, splitArtefacts } from "./monolithicBaseline.js";
 import { verifyGrammar } from "../agents/grammarVerifier.js";
-import { goldSchema, readGeneratedSchema, scoreInstance } from "./schemaScorer.js";
+import { goldSchema, readGeneratedSchema, scoreInstance, aggregateScores } from "./schemaScorer.js";
 
 const ROOT = new URL("../../", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 
@@ -63,6 +63,7 @@ for (const [index, item] of descriptions.slice(0, limit).entries()) {
     fallbackDescription: item.fallback,
     reused,
     latencyMs,
+    responded: raw !== null,
     rawChars: raw?.length ?? null,
     promptTokens: metrics.promptTokens,
     evalTokens: metrics.evalTokens,
@@ -106,19 +107,7 @@ for (const [index, item] of descriptions.slice(0, limit).entries()) {
   );
 }
 
-function aggregate(matching) {
-  const scored = results.filter((r) => r[matching]);
-  const macro = {};
-  for (const facet of ["tables", "columns", "foreignKeys"]) {
-    for (const measure of ["precision", "recall"]) {
-      const values = scored.map((r) => r[matching][facet][measure]).filter((v) => v !== null);
-      macro[`${facet}.${measure}`] = values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
-    }
-  }
-  const typeMatched = scored.reduce((a, r) => a + r[matching].types.matched, 0);
-  const typeCorrect = scored.reduce((a, r) => a + r[matching].types.correct, 0);
-  return { macro, scoredInstances: scored.length, typeAccuracyMicro: typeMatched ? typeCorrect / typeMatched : null };
-}
+const aggregate = (matching) => aggregateScores(results, matching);
 
 const generatedRecords = results.filter((r) => !r.reused && r.latencyMs !== null);
 const summary = {

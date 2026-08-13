@@ -10,7 +10,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { readGeneratedSchema, goldSchema, scoreInstance, mapType } from "../src/eval/schemaScorer.js";
+import { readGeneratedSchema, goldSchema, scoreInstance, mapType, aggregateScores } from "../src/eval/schemaScorer.js";
 import { parseSchema } from "../src/agents/relationalValidator.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -183,6 +183,75 @@ ALTER TABLE singers ADD FOREIGN KEY (singer_id) REFERENCES concerts(singer_id);
     JSON.stringify(g.foreignKeys[0])
   );
   check("gold: types come through as Spider categories", g.tables.get("perpetrator").get("perpetrator_id") === "number");
+}
+
+// ---------------------------------------------------------------------------
+// Aggregation, and what belongs in the denominator
+// ---------------------------------------------------------------------------
+//
+// An instance that produced output the harness could not use still counts. If
+// the monolithic arm returns something unsplittable, excluding it would report
+// the average of the instances that worked, which is not a reliability figure.
+// Specification item 7: such instances score 0 for recall and are excluded from
+// precision, because precision over zero generated elements is undefined.
+//
+// An instance where the endpoint never answered is different in kind. That is an
+// infrastructure failure, not a defect in the model's output, and it is excluded
+// from both and counted separately the same rule the reflection loop uses.
+
+const score = (p, r) => ({
+  tables: { precision: p, recall: r, matched: 0, generated: 0, gold: 0 },
+  columns: { precision: p, recall: r, matched: 0, generated: 0, gold: 0 },
+  foreignKeys: { precision: p, recall: r, matched: 0, generated: 0, gold: 0 },
+  types: { matched: 0, correct: 0, accuracy: null },
+});
+
+{
+  const records = [
+    { responded: true, normalised: score(1.0, 0.5) },
+    { responded: true, normalised: score(0.5, 0.5) },
+  ];
+  const a = aggregateScores(records, "normalised");
+  check("both scored: precision is the mean", near(a.macro["tables.precision"], 0.75), JSON.stringify(a.macro));
+  check("both scored: recall is the mean", near(a.macro["tables.recall"], 0.5));
+  check("counts: 2 scored, 0 unusable, 0 unanswered", a.scored === 2 && a.unusable === 0 && a.noResponse === 0);
+}
+
+{
+  // Third instance responded but produced nothing usable.
+  const records = [
+    { responded: true, normalised: score(1.0, 0.5) },
+    { responded: true, normalised: score(0.5, 0.5) },
+    { responded: true },
+  ];
+  const a = aggregateScores(records, "normalised");
+  check(
+    "an unusable response drags recall down",
+    near(a.macro["tables.recall"], 1 / 3),
+    `got ${a.macro["tables.recall"]}`
+  );
+  check(
+    "an unusable response does not touch precision",
+    near(a.macro["tables.precision"], 0.75),
+    `got ${a.macro["tables.precision"]}`
+  );
+  check("it is counted as unusable", a.unusable === 1 && a.scored === 2);
+}
+
+{
+  // Fourth instance never got an answer from the endpoint.
+  const records = [
+    { responded: true, normalised: score(1.0, 0.5) },
+    { responded: true, normalised: score(0.5, 0.5) },
+    { responded: false },
+  ];
+  const a = aggregateScores(records, "normalised");
+  check(
+    "an unanswered call is excluded from recall",
+    near(a.macro["tables.recall"], 0.5),
+    `got ${a.macro["tables.recall"]}`
+  );
+  check("it is counted separately", a.noResponse === 1 && a.unusable === 0 && a.scored === 2);
 }
 
 console.log(`\n${failures === 0 ? "all" : failures + " failed of"} assertions\n`);
