@@ -2141,3 +2141,36 @@ the difference must be named**, because a run that could be killed at 306 s and
 one that cannot are not measuring the same distribution — the earlier figures are
 censored at the top end, and censored in a way that removes the slowest cases
 rather than a random sample of them.
+
+### Correction: the censoring claim was overstated
+
+The previous entry stated that Scenario A's latency figures are censored at the
+top end by an unknown amount. **That is true in principle and negligible in
+fact**, and the correction matters because the caveat as written would have gone
+into Chapter IV and invited a question with no interesting answer.
+
+| arm | n | median | max observed | reached the 306 s ceiling |
+| --- | --- | --- | --- | --- |
+| pipeline (Agent 1) | 100, full | 28 400 ms | **80 013 ms** | never |
+| baseline (monolithic) | 99, partial tail recoverable | ~98–101 s mean | **186 343 ms** | `academic` only |
+
+Nothing in either arm completed above 200 s. The ceiling bound exactly one
+instance, and that instance is an outlier on every axis: the largest gold schema
+in the subset at 15 tables, and one of the three descriptions reduced to a db_id.
+
+The honest statement for Chapter IV is therefore narrow: one instance of the
+baseline arm was lost to a transport limit rather than to model failure, and it
+is excluded as infrastructure. The distribution below that is uncensored.
+
+**A third telemetry loss, same cause.** Per-instance latency has now gone the way
+of per-instance tokens: re-running with `--resume` sets it to null for reused
+instances, and the aggregate overwrites the file. The full pipeline distribution
+survives only because it was written into a logbook entry before the re-run, and
+the baseline distribution survives only as the last fifteen rows of a truncated
+console log.
+
+The lesson is not "be careful with `--resume`". It is that **a value that cannot
+be recomputed from the artefacts must be persisted beside them at the moment it
+is produced.** Generated text can be re-read; latency and token counts cannot.
+Fixed for tokens in the baseline runner; the same treatment is owed to latency
+and to the pipeline runner before either is run again.
