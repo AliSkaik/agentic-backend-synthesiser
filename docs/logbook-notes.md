@@ -2174,3 +2174,106 @@ be recomputed from the artefacts must be persisted beside them at the moment it
 is produced.** Generated text can be re-read; latency and token counts cannot.
 Fixed for tokens in the baseline runner; the same treatment is owed to latency
 and to the pipeline runner before either is run again.
+
+## Week 9 — 2026-08-13 — Scenario B, and a termination condition that follows from determinism
+
+**n = 2. Illustrative, not evidential.** Two feature descriptions, three arms.
+Artefacts in `tests/scenario-b-2026-08-13/` and, for the orders arm re-run under
+streaming, `tests/scenario-b-2026-08-13-orders-rerun/`.
+
+| | blog | orders |
+| --- | --- | --- |
+| **baseline** | verified, 224.0 s | verified, 77.3 s |
+| **pipeline, attempt 1** | Layer 0 fails; routes never reached | Layer 0 passes, Layer 1 `SyntaxError` |
+| **pipeline, final** | **unverified**, 5 attempts, nothing emitted | **verified**, 2 Agent 2 attempts, 585.4 s |
+
+The blog arm ran under the non-streaming wrapper; its longest generation was
+24.3 s, so the 300 s ceiling could not have affected it. The orders arm is the
+re-run.
+
+### The finding: a repair loop reaches a fixed point, provably
+
+On blog, Agent 1 produced `CREATE TYPE tag_name AS VARCHAR(255)` — not valid
+PostgreSQL in any form. Layer 0's critique names the correction explicitly: *a
+type over an existing base type is CREATE DOMAIN, not CREATE TYPE*. Five
+attempts:
+
+| attempt | chars | verdict |
+| --- | --- | --- |
+| 1 | 653 | `UnexpectedToken` |
+| 2 | 622 | `UnexpectedToken` |
+| 3 | 622 | `UnexpectedToken` |
+| 4 | 622 | `UnexpectedToken` |
+| 5 | 622 | `UnexpectedToken` |
+
+Attempt 2 was reproduced deterministically and inspected. The model **moved the
+offending statement from line 1 to line 7 and did not change it**. It responded
+to the *presence* of a critique without acting on its *content*.
+
+From attempt 2 onward the error is identical, so the critique is identical, so
+the prompt is identical — and at `temperature: 0` with a fixed seed, identical
+prompts give identical output. **Attempts 3, 4 and 5 could not have differed from
+attempt 2.** They were not unlucky; they were impossible.
+
+**The general statement:** whenever a model can perceive a critique but not
+satisfy it, deterministic decoding converts a failed repair into a permanent one.
+The loop does not explore; it stalls.
+
+**The consequence, which is a contribution rather than an observation.** The
+binding termination condition is not an attempt cap — it is **halt when the
+feedback repeats**. That is derived from this project's own determinism property
+rather than borrowed from CoT-SelfEvolve's empirical flattening, and it is
+strictly stronger: N = 5 is not wrong, it is simply never the constraint that
+binds under deterministic decoding. §2.6.2 should carry both, with the derived
+condition first.
+
+### The loop also works, and the same run shows it
+
+On orders, Agent 2's first module failed Layer 1 with a `SyntaxError`. The repair
+succeeded on the next attempt:
+
+| attempt | chars | routes | verdict |
+| --- | --- | --- | --- |
+| 1 | 5 811 | 13 | fail Layer 1, `SyntaxError` |
+| 2 | 7 187 | 15 | **verified** |
+
+So Scenario B contains one instance of each outcome: a loop that repairs a
+syntactic defect in one iteration, and a loop that cannot repair a semantic one
+and stalls deterministically. Reporting either alone would misrepresent it.
+
+The successful repair took **302.6 s**, which is why the first attempt at this
+arm reported an infrastructure failure: under the non-streaming transport the
+response had not finished arriving when undici closed the connection.
+
+### The scoreboard, reported plainly
+
+The baseline produced a verified backend for both fixtures, faster in both cases:
+77.3 s and 224.0 s against the pipeline's 585.4 s on the one fixture where it
+converged. On blog the pipeline emitted nothing.
+
+**Under verified-or-nothing, emitting nothing is correct behaviour, not a
+malfunction.** The schema was genuinely invalid and the framework declined to
+hand on code built against it. That is the guarantee working as designed, and it
+costs exactly what the design says it costs. It is still a loss on the measure a
+developer cares about, and Chapter IV should say both.
+
+### Technical limitations
+
+1. **n = 2.** Six data points across three arms. The attempt-1-versus-final gap
+   is two observations and is not evidence about the loop. Scenario A carries the
+   sample size.
+
+2. **The two arms' verifier verdicts are not comparable**, for the reason
+   established in Scenario A: the baseline reaches the verifier through the
+   splitter and the pipeline does not. The symmetric measure is the extraction
+   fraction — the baseline emitted 10.1% and 31.6% of its response as content
+   that had to be removed before either artefact could be parsed.
+
+3. **The blog and orders arms ran under different transports.** Neither result
+   depends on it — blog's longest generation was 24.3 s — but latency figures
+   from the two should not be pooled.
+
+4. **The pipeline is slower by construction and the figure understates it.**
+   585.4 s covers one Agent 1 generation and two Agent 2 generations. A fixture
+   needing more repairs costs more, and the blog arm spent 111.4 s producing
+   nothing at all.
